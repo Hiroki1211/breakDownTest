@@ -225,7 +225,7 @@ public class Executer {
 									executeStatement = method.getReturnValueType() + " result = ";
 								}
 								
-								Instance executeMethodInstance = this.getInstanceFromId(method.getId(), instanceLists, method.getOwner());
+								Instance executeMethodInstance = this.getInstanceFromId(method.getId(), instanceLists);
 								if(executeMethodInstance != null) {
 									executeStatement += executeMethodInstance.getName() + "." + method.getName() + "(";
 									if(method.getParams().size() == 0) {
@@ -236,7 +236,7 @@ public class Executer {
 											if(!method.getParams().get(executeParamNum).getValue().equals("")) {
 												param = method.getParams().get(executeParamNum).getValue();
 											}else {
-												Instance instance = this.getInstanceFromId(method.getParams().get(executeParamNum).getId(), instanceLists, method.getOwner());
+												Instance instance = this.getInstanceFromId(method.getParams().get(executeParamNum).getId(), instanceLists);
 												if(instance != null) {
 													param = instance.getName();
 												}
@@ -262,7 +262,7 @@ public class Executer {
 								UnitTest unitTest = new UnitTest();
 								unitTest.setOwner(methodOwner);
 								// 1. メソッドで使用するインスタンスのコンストラクタを宣言
-								Instance methodInstance = this.getInstanceFromId(method.getId(), instanceLists, method.getOwner());
+								Instance methodInstance = this.getInstanceFromId(method.getId(), instanceLists);
 								if(methodInstance != null) {
 									unitTest.setConstructorLists(methodInstance.getConstructorLists());
 								}
@@ -270,7 +270,7 @@ public class Executer {
 								for(int paramNum = 0; paramNum < method.getParams().size(); paramNum++) {
 									ValueOption valueOption = method.getParams().get(paramNum);
 									if(!valueOption.getId().equals("")) {
-										Instance argumentInstance = this.getInstanceFromId(valueOption.getId(), instanceLists, valueOption.getType());
+										Instance argumentInstance = this.getInstanceFromId(valueOption.getId(), instanceLists);
 										if(argumentInstance != null) {
 											ArrayList<String> constructorArgumentConstructorLists = argumentInstance.getConstructorLists();
 											for(int j = 0; j < constructorArgumentConstructorLists.size(); j++) {
@@ -298,7 +298,7 @@ public class Executer {
 								for(int paramNum = 0; paramNum < method.getParams().size(); paramNum++) {
 									ValueOption valueOption = method.getParams().get(paramNum);
 									if(!valueOption.getId().equals("")) {
-										Instance argumentInstance = this.getInstanceFromId(valueOption.getId(), instanceLists, valueOption.getType());
+										Instance argumentInstance = this.getInstanceFromId(valueOption.getId(), instanceLists);
 										if(argumentInstance != null) {
 											ArrayList<Method> argumentInstanceMethodLists = argumentInstance.getMethodLists();
 											for(int argumentInstanceMethodNum = 0; argumentInstanceMethodNum < argumentInstanceMethodLists.size(); argumentInstanceMethodNum++) {
@@ -403,7 +403,7 @@ public class Executer {
 							String addParam = "";
 							if(executeConstructorParams.get(exConParamNum).getValue().equals("")) {
 								String paramInstanceId = executeConstructorParams.get(exConParamNum).getId();
-								Instance paramInstance = this.getInstanceFromId(paramInstanceId, instanceLists, executeConstructorParams.get(exConParamNum).getType());
+								Instance paramInstance = this.getInstanceFromId(paramInstanceId, instanceLists);
 								addParam = paramInstance.getName();
 							}else {
 								addParam = executeConstructorParams.get(exConParamNum).getValue();
@@ -425,7 +425,7 @@ public class Executer {
 							// 2a. constructor の引数のオブジェクトのコンストラクタ実行
 							ValueOption executeConstructorParam = executeConstructorParams.get(exConParamNum);
 							if(executeConstructorParam.getValue().equals("")) {
-								Instance executeConstructorParamInstance = this.getInstanceFromId(executeConstructorParam.getId(), instanceLists, executeConstructorParam.getType());
+								Instance executeConstructorParamInstance = this.getInstanceFromId(executeConstructorParam.getId(), instanceLists);
 								if(executeConstructorParamInstance != null) {
 									for(int j = 0; j < executeConstructorParamInstance.getConstructorLists().size(); j++) {
 										instanceUnitTest.addConstructorArgumentLists(executeConstructorParamInstance.getConstructorLists().get(j));
@@ -534,19 +534,8 @@ public class Executer {
 
 								if(targetUnitTestMethod.getId().equals(targetInstance.getId()) && targetUnitTestMethod.getName().equals(targetMethodName)) {
 									// 2. assertion文の作成
-									System.out.println(targetUnitTestMethod.getName());
-									System.out.println(targetUnitTestMethod.getOwner());
-									System.out.println(targetUnitTestMethod.getId());
-									System.out.println(this.getInstanceFromId(targetUnitTest.getMethod().getId(), instanceLists, targetUnitTest.getOwner()).getName());
-									System.out.println();
-									
-									
 									String targetInstanceName = this.getInstanceFromId(targetUnitTest.getMethod().getId(), instanceLists, targetUnitTest.getOwner()).getName();
 									String assertionStatement = "assertEquals(" + targetVariableValue + ", " + targetInstanceName + "." + analyzerVariable.getGetterMethod().getName() + ");";
-//									System.out.println(targetInstance.getId());
-//									System.out.println(targetUnitTest.getMethod().getId());
-//									System.out.println(targetUnitTest.getMethod().getName());
-//									System.out.println();
 									
 									targetUnitTest.addAssertionLists(assertionStatement);
 									targetUnitTest.createUnitTest();
@@ -560,14 +549,20 @@ public class Executer {
 			}
 		}
 		
+		return unitTestLists;
+	}
+	
+	private Instance getInstanceFromId(String id, ArrayList<Instance> instanceLists) {
+		Instance instance = null;
 		for(int i = 0; i < instanceLists.size(); i++) {
-			System.out.println(instanceLists.get(i).getId());
-			System.out.println(instanceLists.get(i).getName());
-			System.out.println(instanceLists.get(i).getOwner());
-			System.out.println();
+			Instance targetInstance = instanceLists.get(i);
+			if(targetInstance.getId().equals(id)) {
+				instance = targetInstance;
+				break;
+			}
 		}
 		
-		return unitTestLists;
+		return instance;
 	}
 	
 	private Instance getInstanceFromId(String id, ArrayList<Instance> instanceLists, String owner) {
