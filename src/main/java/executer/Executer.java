@@ -208,144 +208,23 @@ public class Executer {
 						if(methodType.equals("instance")){
 							for(int recordNum = 0; recordNum < record; recordNum++) {
 								// createMethod
-							 	Method method = new Method();
-								method.setId(methodValueOptionForId.get(recordNum).getId());
-								method.setName(methodName);
-								method.setOwner(methodOwner);
-								method.setOwnerValueOption(methodValueOptionForId.get(recordNum));
-								for(int j = 0; j < params.size(); j++) {
-									method.addParams(params.get(j).get(recordNum));
-								}
-								method.setReturnValueType(trace.getAttr().getType());
-								method.setReturnValue(trace.getValue().getValueOptionLists().get(recordNum));
+							 	Method method = this.createMethod(methodValueOptionForId, recordNum, methodName, methodOwner, params, trace);
 								
 								// create Method executeStatement
-								String executeStatement = "";
-								if(!method.getReturnValueType().equals("void")) {
-									executeStatement = method.getReturnValueType() + " result = ";
-								}
-								
-								Instance executeMethodInstance = this.getInstanceFromId(method.getId(), instanceLists);
-								if(executeMethodInstance != null) {
-									executeStatement += executeMethodInstance.getName() + "." + method.getName() + "(";
-									if(method.getParams().size() == 0) {
-										executeStatement += ");";
-									}else {
-										for(int executeParamNum = 0; executeParamNum < method.getParams().size(); executeParamNum++) {
-											String param = "";
-											if(!method.getParams().get(executeParamNum).getValue().equals("")) {
-												param = method.getParams().get(executeParamNum).getValue();
-											}else {
-												Instance instance = this.getInstanceFromId(method.getParams().get(executeParamNum).getId(), instanceLists);
-												if(instance != null) {
-													param = instance.getName();
-												}
-												
-												Array array = this.getArrayFromId(method.getParams().get(executeParamNum).getId(), arrayLists);
-												if(array != null) {
-													param = instance.getName();
-												}
-											}
-											
-											if(executeParamNum == params.size() - 1) {
-												executeStatement += param + ");";
-											}else {
-												executeStatement += param + ", ";
-											}
-										}
-									}
-								}
-								
+								String executeStatement = this.createMethodExecuteStatement(method, instanceLists, arrayLists, params);
 								method.setExecuteStatement(executeStatement);
 								
 								// createUnitTest
-								UnitTest unitTest = new UnitTest();
-								unitTest.setOwner(methodOwner);
-								// 1. メソッドで使用するインスタンスのコンストラクタを宣言
-								Instance methodInstance = this.getInstanceFromId(method.getId(), instanceLists);
-								if(methodInstance != null) {
-									unitTest.setConstructorLists(methodInstance.getConstructorLists());
-								}
-								// 2. メソッドの引数で使用するインスタンスの宣言
-								for(int paramNum = 0; paramNum < method.getParams().size(); paramNum++) {
-									ValueOption valueOption = method.getParams().get(paramNum);
-									if(!valueOption.getId().equals("")) {
-										Instance argumentInstance = this.getInstanceFromId(valueOption.getId(), instanceLists);
-										if(argumentInstance != null) {
-											ArrayList<String> constructorArgumentConstructorLists = argumentInstance.getConstructorLists();
-											for(int j = 0; j < constructorArgumentConstructorLists.size(); j++) {
-												unitTest.addConstructorArgumentLists(constructorArgumentConstructorLists.get(j));
-											}
-										}
-									}
-								}
-								// 3. メソッドの引数で使用する配列の宣言
-								for(int paramNum = 0; paramNum < method.getParams().size(); paramNum++) {
-									ValueOption valueOption = method.getParams().get(paramNum);
-									if(!valueOption.getId().equals("")) {
-										Array argumentArray = this.getArrayFromId(valueOption.getId(), arrayLists);
-										if(argumentArray != null) {
-											unitTest.addConstructorArgumentLists(argumentArray.getDeclareStatement());
-										}
-									}
-								}
-								// 4. メソッドで使用するインスタンスのメソッドを実行
-								if(methodInstance != null) {
-									ArrayList<Method> methodInstanceMethodLists = new ArrayList<Method>(methodInstance.getMethodLists());
-									unitTest.setMethodLists(methodInstanceMethodLists);
-								}
-								// 5. メソッドの引数で使用するインスタンスのメソッドを実行
-								for(int paramNum = 0; paramNum < method.getParams().size(); paramNum++) {
-									ValueOption valueOption = method.getParams().get(paramNum);
-									if(!valueOption.getId().equals("")) {
-										Instance argumentInstance = this.getInstanceFromId(valueOption.getId(), instanceLists);
-										if(argumentInstance != null) {
-											ArrayList<Method> argumentInstanceMethodLists = argumentInstance.getMethodLists();
-											for(int argumentInstanceMethodNum = 0; argumentInstanceMethodNum < argumentInstanceMethodLists.size(); argumentInstanceMethodNum++) {
-												Method argumentMethod = argumentInstanceMethodLists.get(argumentInstanceMethodNum);
-												unitTest.addArgumentMethodLists(argumentMethod);
-											}
-										}
-									}
-								}
-								// 6. メソッドを実行
-								unitTest.setMethod(method);
-								// 7. アサーションを追加
-								String assertionStatement;
-								if(!method.getReturnValue().getValue().equals("")) {
-									assertionStatement = this.createAssertion(method.getReturnValue().getValue());
-									unitTest.addAssertionLists(assertionStatement);
-								}
-
-								// 8. unitTest生成
-								unitTest.createUnitTest();
-								// 9. unitTestListsに追加
-								unitTestLists.add(unitTest);
+								Instance methodInstance = this.createUnitTest(methodOwner, method, instanceLists, arrayLists, unitTestLists);
 								
 								// add Method to Instance
-								if(!method.getOwner().equals(methodCalledFrom)) {
-									if(methodInstance != null) {
-										methodInstance.addMethodLists(method);
-									}
-								}
+								this.addMethodToInstance(method, methodCalledFrom, methodInstance);
 								
 								// create Instance 
 								if(trace.getValuetype().equals("java.lang.Object")) {
-									Instance instance = new Instance();
-									instance.setId(trace.getValue().getValueOptionLists().get(recordNum).getId());
-									instance.setOwner(method.getOwner(), instanceLists.size());
-									instanceLists.add(instance);
-									if(methodInstance != null) {
-										instance.addConstructorParamInstanceLists(methodInstance);
-									}
-									instance.setConstructorParams(method.getParams());
-									String methodExecuteStatement = method.getExecuteStatement();
-									methodExecuteStatement = methodExecuteStatement.replace("result", instance.getName());
-									instance.createConstructorStatement(instanceLists, arrayLists, methodExecuteStatement);
+									this.createInstance(trace, recordNum, method, instanceLists, methodInstance, arrayLists);
 								}
 							}
-						}else {
-
 						}
 						
 						// 初期化
@@ -361,88 +240,22 @@ public class Executer {
 					
 				case "NEW_OBJECT_CREATED":
 					createInstanceFlag = false;
+					record = trace.getRecord();
 					
 					// create Instance
-					record = trace.getRecord();
-					Instance instance = new Instance();
-					for(int recordNum = 0; recordNum < record; recordNum++) {
-						instance = new Instance();
-						ValueOption instanceValueOption = trace.getValue().getValueOptionLists().get(recordNum);
-						instance.setOwner(instanceValueOption.getType(), instanceLists.size());
-						instance.setId(instanceValueOption.getId());
-						for(int constructorParamNum = 0; constructorParamNum < params.size(); constructorParamNum++) {
-							instance.addConstructorParams(params.get(constructorParamNum).get(recordNum));
-						}
-						
-						instance.createConstructorStatement(instanceLists, arrayLists);
-						instanceLists.add(instance);
-					}
+					this.createObjectInstance(record, trace, instanceLists, params, arrayLists);
 					
 					// create UnitTest
 					for(int recordNum = 0; recordNum < record; recordNum++) {
 						// 1. create Method
-						Method instanceMethod = new Method();
-						instanceMethod.setName("<init>");
-						for(int j = 0; j < params.size(); j++) {
-							instanceMethod.addParams(params.get(j).get(recordNum));
-						}
-						instanceMethod.setOwner(trace.getValue().getValueOptionLists().get(recordNum).getType());
-						String tmp = methodOwner;
-						String[] tmpSplit = tmp.split(Pattern.quote("."));
-						instanceMethod.setReturnValueType(tmpSplit[tmpSplit.length - 1]);
-						instanceMethod.setReturnValue(trace.getValue().getValueOptionLists().get(recordNum));
-						instanceMethod.setId(trace.getValue().getValueOptionLists().get(recordNum).getId());
-						instanceMethod.setCalledFrom(methodCalledFrom);
-						instanceMethod.setOwnerValueOption(trace.getValue().getValueOptionLists().get(recordNum));
-						
-						Instance tmpInstance = this.getInstanceFromId(instanceMethod.getId(), instanceLists, instanceMethod.getOwner());
-						
-						String executeStatement = instanceMethod.getReturnValueType() + " " + tmpInstance.getName() +" = new " + instanceMethod.getReturnValueType() + "(";
+						Method instanceMethod = this.createObjectInstanceMethod(params, recordNum, trace, methodOwner, methodCalledFrom);
 						ArrayList<ValueOption> executeConstructorParams = instanceMethod.getParams();
-						for(int exConParamNum = 0; exConParamNum < executeConstructorParams.size(); exConParamNum++) {
-							String addParam = "";
-							if(executeConstructorParams.get(exConParamNum).getValue().equals("")) {
-								String paramInstanceId = executeConstructorParams.get(exConParamNum).getId();
-								Instance paramInstance = this.getInstanceFromId(paramInstanceId, instanceLists);
-								addParam = paramInstance.getName();
-							}else {
-								addParam = executeConstructorParams.get(exConParamNum).getValue();
-							}
-							
-							if(exConParamNum == executeConstructorParams.size() - 1) {
-								executeStatement += addParam;
-							}else {
-								executeStatement += addParam + ", ";
-							}
-						}
-						executeStatement += ");";
+						
+						String executeStatement = this.createObjectInstanceMethodExecuteStatement(instanceMethod, executeConstructorParams, instanceLists);
 						instanceMethod.setExecuteStatement(executeStatement);
 						
 						// 2. create UnitTest
-						UnitTest instanceUnitTest = new UnitTest();
-						instanceUnitTest.setOwner(methodOwner);
-						for(int exConParamNum = 0; exConParamNum < executeConstructorParams.size(); exConParamNum++) {
-							// 2a. constructor の引数のオブジェクトのコンストラクタ実行
-							ValueOption executeConstructorParam = executeConstructorParams.get(exConParamNum);
-							if(executeConstructorParam.getValue().equals("")) {
-								Instance executeConstructorParamInstance = this.getInstanceFromId(executeConstructorParam.getId(), instanceLists);
-								if(executeConstructorParamInstance != null) {
-									for(int j = 0; j < executeConstructorParamInstance.getConstructorLists().size(); j++) {
-										instanceUnitTest.addConstructorArgumentLists(executeConstructorParamInstance.getConstructorLists().get(j));
-										// 2b. constructor の引数のオブジェクトのインスタンスのメソッドを実行
-										instanceUnitTest.addArgumentMethodLists(executeConstructorParamInstance.getMethodLists().get(j));
-									}
-								}
-							}
-							
-						}
-						
-						// 2c. methodの実行
-						instanceUnitTest.setMethod(instanceMethod);
-						
-						instanceUnitTest.createUnitTest();
-						unitTestLists.add(instanceUnitTest);
-						
+						this.createObjectUnitTest(methodOwner, executeConstructorParams, instanceLists, instanceMethod, unitTestLists);
 					}
 					
 					
@@ -551,6 +364,241 @@ public class Executer {
 		
 		return unitTestLists;
 	}
+	
+	private Method createMethod(ArrayList<ValueOption> methodValueOptionForId, int recordNum, String methodName, String methodOwner, ArrayList<ArrayList<ValueOption>> params, Trace trace) {
+		Method method = new Method();
+		method.setId(methodValueOptionForId.get(recordNum).getId());
+		method.setName(methodName);
+		method.setOwner(methodOwner);
+		method.setOwnerValueOption(methodValueOptionForId.get(recordNum));
+		for(int j = 0; j < params.size(); j++) {
+			method.addParams(params.get(j).get(recordNum));
+		}
+		method.setReturnValueType(trace.getAttr().getType());
+		method.setReturnValue(trace.getValue().getValueOptionLists().get(recordNum));
+		
+		return method;
+	}
+	
+	private String createMethodExecuteStatement(Method method, ArrayList<Instance> instanceLists, ArrayList<Array> arrayLists, ArrayList<ArrayList<ValueOption>> params) {
+		String executeStatement = "";
+		if(!method.getReturnValueType().equals("void")) {
+			executeStatement = method.getReturnValueType() + " result = ";
+		}
+		
+		Instance executeMethodInstance = this.getInstanceFromId(method.getId(), instanceLists);
+		if(executeMethodInstance != null) {
+			executeStatement += executeMethodInstance.getName() + "." + method.getName() + "(";
+			if(method.getParams().size() == 0) {
+				executeStatement += ");";
+			}else {
+				for(int executeParamNum = 0; executeParamNum < method.getParams().size(); executeParamNum++) {
+					String param = "";
+					if(!method.getParams().get(executeParamNum).getValue().equals("")) {
+						param = method.getParams().get(executeParamNum).getValue();
+					}else {
+						Instance instance = this.getInstanceFromId(method.getParams().get(executeParamNum).getId(), instanceLists);
+						if(instance != null) {
+							param = instance.getName();
+						}
+						
+						Array array = this.getArrayFromId(method.getParams().get(executeParamNum).getId(), arrayLists);
+						if(array != null) {
+							param = instance.getName();
+						}
+					}
+					
+					if(executeParamNum == params.size() - 1) {
+						executeStatement += param + ");";
+					}else {
+						executeStatement += param + ", ";
+					}
+				}
+			}
+		}
+		
+		return executeStatement;
+	}
+	
+	private Instance createUnitTest(String methodOwner, Method method, ArrayList<Instance> instanceLists, ArrayList<Array> arrayLists, ArrayList<UnitTest> unitTestLists) {
+		UnitTest unitTest = new UnitTest();
+		unitTest.setOwner(methodOwner);
+		// 1. メソッドで使用するインスタンスのコンストラクタを宣言
+		Instance methodInstance = this.getInstanceFromId(method.getId(), instanceLists);
+		if(methodInstance != null) {
+			unitTest.setConstructorLists(methodInstance.getConstructorLists());
+		}
+		// 2. メソッドの引数で使用するインスタンスの宣言
+		for(int paramNum = 0; paramNum < method.getParams().size(); paramNum++) {
+			ValueOption valueOption = method.getParams().get(paramNum);
+			if(!valueOption.getId().equals("")) {
+				Instance argumentInstance = this.getInstanceFromId(valueOption.getId(), instanceLists);
+				if(argumentInstance != null) {
+					ArrayList<String> constructorArgumentConstructorLists = argumentInstance.getConstructorLists();
+					for(int j = 0; j < constructorArgumentConstructorLists.size(); j++) {
+						unitTest.addConstructorArgumentLists(constructorArgumentConstructorLists.get(j));
+					}
+				}
+			}
+		}
+		// 3. メソッドの引数で使用する配列の宣言
+		for(int paramNum = 0; paramNum < method.getParams().size(); paramNum++) {
+			ValueOption valueOption = method.getParams().get(paramNum);
+			if(!valueOption.getId().equals("")) {
+				Array argumentArray = this.getArrayFromId(valueOption.getId(), arrayLists);
+				if(argumentArray != null) {
+					unitTest.addConstructorArgumentLists(argumentArray.getDeclareStatement());
+				}
+			}
+		}
+		// 4. メソッドで使用するインスタンスのメソッドを実行
+		if(methodInstance != null) {
+			ArrayList<Method> methodInstanceMethodLists = new ArrayList<Method>(methodInstance.getMethodLists());
+			unitTest.setMethodLists(methodInstanceMethodLists);
+		}
+		// 5. メソッドの引数で使用するインスタンスのメソッドを実行
+		for(int paramNum = 0; paramNum < method.getParams().size(); paramNum++) {
+			ValueOption valueOption = method.getParams().get(paramNum);
+			if(!valueOption.getId().equals("")) {
+				Instance argumentInstance = this.getInstanceFromId(valueOption.getId(), instanceLists);
+				if(argumentInstance != null) {
+					ArrayList<Method> argumentInstanceMethodLists = argumentInstance.getMethodLists();
+					for(int argumentInstanceMethodNum = 0; argumentInstanceMethodNum < argumentInstanceMethodLists.size(); argumentInstanceMethodNum++) {
+						Method argumentMethod = argumentInstanceMethodLists.get(argumentInstanceMethodNum);
+						unitTest.addArgumentMethodLists(argumentMethod);
+					}
+				}
+			}
+		}
+		// 6. メソッドを実行
+		unitTest.setMethod(method);
+		// 7. アサーションを追加
+		String assertionStatement;
+		if(!method.getReturnValue().getValue().equals("")) {
+			assertionStatement = this.createAssertion(method.getReturnValue().getValue());
+			unitTest.addAssertionLists(assertionStatement);
+		}
+
+		// 8. unitTest生成
+		unitTest.createUnitTest();
+		// 9. unitTestListsに追加
+		unitTestLists.add(unitTest);
+		
+		return methodInstance;
+	}
+	
+	private void addMethodToInstance(Method method, String methodCalledFrom, Instance methodInstance) {
+		if(!method.getOwner().equals(methodCalledFrom)) {
+			if(methodInstance != null) {
+				methodInstance.addMethodLists(method);
+			}
+		}
+	}
+	
+	private void createInstance(Trace trace, int recordNum, Method method, ArrayList<Instance> instanceLists, Instance methodInstance, ArrayList<Array> arrayLists) {
+		Instance instance = new Instance();
+		instance.setId(trace.getValue().getValueOptionLists().get(recordNum).getId());
+		instance.setOwner(method.getOwner(), instanceLists.size());
+		instanceLists.add(instance);
+		if(methodInstance != null) {
+			instance.addConstructorParamInstanceLists(methodInstance);
+		}
+		instance.setConstructorParams(method.getParams());
+		String methodExecuteStatement = method.getExecuteStatement();
+		methodExecuteStatement = methodExecuteStatement.replace("result", instance.getName());
+		instance.createConstructorStatement(instanceLists, arrayLists, methodExecuteStatement);
+	}
+	
+	private void createObjectInstance(int record, Trace trace, ArrayList<Instance> instanceLists, ArrayList<ArrayList<ValueOption>> params, ArrayList<Array> arrayLists) {
+		Instance instance = new Instance();
+		for(int recordNum = 0; recordNum < record; recordNum++) {
+			instance = new Instance();
+			ValueOption instanceValueOption = trace.getValue().getValueOptionLists().get(recordNum);
+			instance.setOwner(instanceValueOption.getType(), instanceLists.size());
+			instance.setId(instanceValueOption.getId());
+			for(int constructorParamNum = 0; constructorParamNum < params.size(); constructorParamNum++) {
+				instance.addConstructorParams(params.get(constructorParamNum).get(recordNum));
+			}
+			
+			instance.createConstructorStatement(instanceLists, arrayLists);
+			instanceLists.add(instance);
+		}
+		
+	}
+	
+	private Method createObjectInstanceMethod(ArrayList<ArrayList<ValueOption>> params, int recordNum, Trace trace, String methodOwner, String methodCalledFrom) {
+		Method instanceMethod = new Method();
+		instanceMethod.setName("<init>");
+		for(int j = 0; j < params.size(); j++) {
+			instanceMethod.addParams(params.get(j).get(recordNum));
+		}
+		instanceMethod.setOwner(trace.getValue().getValueOptionLists().get(recordNum).getType());
+		String tmp = methodOwner;
+		String[] tmpSplit = tmp.split(Pattern.quote("."));
+		instanceMethod.setReturnValueType(tmpSplit[tmpSplit.length - 1]);
+		instanceMethod.setReturnValue(trace.getValue().getValueOptionLists().get(recordNum));
+		instanceMethod.setId(trace.getValue().getValueOptionLists().get(recordNum).getId());
+		instanceMethod.setCalledFrom(methodCalledFrom);
+		instanceMethod.setOwnerValueOption(trace.getValue().getValueOptionLists().get(recordNum));
+		
+		return instanceMethod;
+	}
+	
+	private String createObjectInstanceMethodExecuteStatement(Method instanceMethod, ArrayList<ValueOption> executeConstructorParams, ArrayList<Instance> instanceLists) {
+		Instance tmpInstance = this.getInstanceFromId(instanceMethod.getId(), instanceLists, instanceMethod.getOwner());
+		String executeStatement = instanceMethod.getReturnValueType() + " " + tmpInstance.getName() +" = new " + instanceMethod.getReturnValueType() + "(";
+		for(int exConParamNum = 0; exConParamNum < executeConstructorParams.size(); exConParamNum++) {
+			String addParam = "";
+			if(executeConstructorParams.get(exConParamNum).getValue().equals("")) {
+				String paramInstanceId = executeConstructorParams.get(exConParamNum).getId();
+				Instance paramInstance = this.getInstanceFromId(paramInstanceId, instanceLists);
+				addParam = paramInstance.getName();
+			}else {
+				addParam = executeConstructorParams.get(exConParamNum).getValue();
+			}
+			
+			if(exConParamNum == executeConstructorParams.size() - 1) {
+				executeStatement += addParam;
+			}else {
+				executeStatement += addParam + ", ";
+			}
+		}
+		executeStatement += ");";
+		
+		return executeStatement;
+	}
+	
+	private void createObjectUnitTest(String methodOwner, ArrayList<ValueOption> executeConstructorParams, ArrayList<Instance> instanceLists, Method instanceMethod, ArrayList<UnitTest> unitTestLists) {
+		UnitTest instanceUnitTest = new UnitTest();
+		instanceUnitTest.setOwner(methodOwner);
+		for(int exConParamNum = 0; exConParamNum < executeConstructorParams.size(); exConParamNum++) {
+			// 2a. constructor の引数のオブジェクトのコンストラクタ実行
+			ValueOption executeConstructorParam = executeConstructorParams.get(exConParamNum);
+			if(executeConstructorParam.getValue().equals("")) {
+				Instance executeConstructorParamInstance = this.getInstanceFromId(executeConstructorParam.getId(), instanceLists);
+				if(executeConstructorParamInstance != null) {
+					for(int j = 0; j < executeConstructorParamInstance.getConstructorLists().size(); j++) {
+						instanceUnitTest.addConstructorArgumentLists(executeConstructorParamInstance.getConstructorLists().get(j));
+						// 2b. constructor の引数のオブジェクトのインスタンスのメソッドを実行
+						instanceUnitTest.addArgumentMethodLists(executeConstructorParamInstance.getMethodLists().get(j));
+					}
+				}
+			}
+			
+		}
+		
+		// 2c. methodの実行
+		instanceUnitTest.setMethod(instanceMethod);
+		
+		instanceUnitTest.createUnitTest();
+		unitTestLists.add(instanceUnitTest);
+	}
+	
+	
+	
+	
+	
+	
 	
 	private Instance getInstanceFromId(String id, ArrayList<Instance> instanceLists) {
 		Instance instance = null;
