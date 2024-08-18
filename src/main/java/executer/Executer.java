@@ -110,6 +110,10 @@ public class Executer {
 	}
 	
 	private ArrayList<UnitTestGroup> createUnitTestGroupLists(ArrayList<UnitTest> unitTestLists) {
+		for(int unitTestNum = 0; unitTestNum < unitTestLists.size(); unitTestNum++) {
+			unitTestLists.get(unitTestNum).createUnitTest();
+		}
+		
 		ArrayList<UnitTestGroup> unitTestGroupLists = new ArrayList<UnitTestGroup>();
 		
 		for(int i = 0; i < unitTestLists.size(); i++) {
@@ -377,9 +381,6 @@ public class Executer {
 										}
 									}
 									
-									for(int unitTestNum = 0; unitTestNum < unitTestLists.size(); unitTestNum++) {
-										unitTestLists.get(unitTestNum).createUnitTest();
-									}
 									break;
 								}
 							}
@@ -511,9 +512,7 @@ public class Executer {
 			}
 		}
 
-		// 8. unitTest生成
-		unitTest.createUnitTest();
-		// 9. unitTestListsに追加
+		// 8. unitTestListsに追加
 		unitTestLists.add(unitTest);
 		
 		return methodInstance;
@@ -623,7 +622,6 @@ public class Executer {
 		// 2c. methodの実行
 		instanceUnitTest.setMethod(instanceMethod);
 		
-		instanceUnitTest.createUnitTest();
 		unitTestLists.add(instanceUnitTest);
 	}
 	
