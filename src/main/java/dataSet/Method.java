@@ -16,9 +16,29 @@ public class Method {
 	private String id;
 	private String calledFrom;
 	private ValueOption ownerValueOption;
+	private boolean hasAssignment = false;
+	
+	public Method clone() {
+		Method method = new Method();
+		method.setName(name);
+		method.setParams(params);
+		method.setExecuteStatement(executeStatement);
+		method.setOwner(owner);
+		method.setReturnValueType(returnValueType);
+		method.setReturnValue(returnValue);
+		method.setId(id);
+		method.setCalledFrom(calledFrom);
+		method.setOwnerValueOption(ownerValueOption);
+		method.setHasAssignment(hasAssignment);
+		return method;
+	}
 	
 	public void setName(String input) {
 		name = input;
+	}
+	
+	private void setParams(ArrayList<ValueOption> input) {
+		params = new ArrayList<ValueOption>(input);
 	}
 	
 	public void addParams(ValueOption input) {
@@ -52,6 +72,10 @@ public class Method {
 	
 	public void setOwnerValueOption(ValueOption input) {
 		ownerValueOption = input;
+	}
+	
+	public void setHasAssignment(boolean input) {
+		hasAssignment = input;
 	}
 	
 	public String getName() {
@@ -88,5 +112,9 @@ public class Method {
 	
 	public ValueOption getOwnerValueOption() {
 		return ownerValueOption;
+	}
+	
+	public boolean getHasAssignment() {
+		return hasAssignment;
 	}
 }

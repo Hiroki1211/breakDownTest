@@ -488,11 +488,11 @@ public class Executer {
 	}
 	
 	private void addMethodToInstance(Method method, String methodCalledFrom, Instance methodInstance) {
-		if(!method.getOwner().equals(methodCalledFrom)) {
-			if(methodInstance != null) {
-				methodInstance.addMethodLists(method);
-			}
+		
+		if(methodInstance != null) {
+			methodInstance.addMethodLists(method);
 		}
+	
 	}
 	
 	private void createInstance(Trace trace, int recordNum, Method method, ArrayList<Instance> instanceLists, Instance methodInstance, ArrayList<Array> arrayLists) {

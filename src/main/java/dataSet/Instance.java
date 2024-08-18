@@ -151,10 +151,6 @@ public class Instance implements Cloneable{
 		constructorLists = input;
 	}
 	
-	public void addConstrutorLists(String input) {
-		constructorLists.add(input);
-	}
-	
 	public void addConstructorParams(ValueOption input) {
 		constructorParams.add(input);
 	}
@@ -176,7 +172,12 @@ public class Instance implements Cloneable{
 	}
 	
 	public void addMethodLists(Method input) {
-		methodLists.add(input);
+		String executeStatement = input.getExecuteStatement();
+		String swapName = this.name + "Method" + methodLists.size();
+		executeStatement = executeStatement.replace("result", swapName);
+		Method method = input.clone();
+		method.setExecuteStatement(executeStatement);
+		methodLists.add(method);
 	}
 	
 	public void setMethodLists(ArrayList<Method> input) {
