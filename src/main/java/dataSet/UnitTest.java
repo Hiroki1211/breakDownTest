@@ -34,12 +34,16 @@ public class UnitTest {
 		
 		unitTestStatement.add("\t" + "// execute Method for Instance of Method");
 		for(int i = 0; i < methodLists.size(); i++) {
-			unitTestStatement.add("\t" + methodLists.get(i).getExecuteStatement());
+			if(methodLists.get(i).getHasAssignment()) {
+				unitTestStatement.add("\t" + methodLists.get(i).getExecuteStatement());
+			}
 		}
 		
 		unitTestStatement.add("\t" + "// execute Method for Instance of Method Argument");
 		for(int i = 0; i < argumentMethodLists.size(); i++) {
-			unitTestStatement.add("\t" + argumentMethodLists.get(i).getExecuteStatement());
+			if(argumentMethodLists.get(i).getHasAssignment()) {
+				unitTestStatement.add("\t" + argumentMethodLists.get(i).getExecuteStatement());
+			}
 		}
 		
 		unitTestStatement.add("\t" + "// execute Target Method");

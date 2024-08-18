@@ -2,7 +2,6 @@ package bmi;
 
 public class Human {
 
-	// 基本情報
 	private String name;
 	private int age;
 	private float height;	//cm
@@ -11,7 +10,7 @@ public class Human {
 	// BMI
 	private float bmi;
 	private float appropriateWeight; 
-	private String status; // 1. 痩せすぎ, 2. 痩せ, 3. 痩せぎみ, 4. 普通体重, 5. 前肥満, 6. 肥満（１度）, 7. 肥満（２度）, 8. 肥満（３度）
+	private String status; 
 	
 	public Human(String n, int a, float h, float w) {
 		name = n;
@@ -40,6 +39,7 @@ public class Human {
 	}
 	
 	public float getBmi() {
+		bmi = bmi;
 		return bmi;
 	}
 	
@@ -63,21 +63,21 @@ public class Human {
 		String status;
 		
 		if( bmi < 16.0 ) {
-			status = "痩せすぎ";
+			status = "thin2";
 		}else if( bmi < 17.0 ) {
-			status = "痩せ";
+			status = "thin1";
 		}else if( bmi < 18.5 ) {
-			status = "痩せぎみ";
+			status = "thin0";
 		}else if( bmi < 25.0 ) {
-			status = "普通体重";
+			status = "normal";
 		}else if( bmi < 30.0 ) {
-			status = "前肥満";
+			status = "fat0";
 		}else if( bmi < 35.0 ) {
-			status = "肥満（１度）";
+			status = "fat1";
 		}else if( bmi < 40.0 ) {
-			status = "肥満（２度）";
+			status = "fat2";
 		}else {
-			status = "肥満（３度）";
+			status = "fat3";
 		}
 		
 		return status;

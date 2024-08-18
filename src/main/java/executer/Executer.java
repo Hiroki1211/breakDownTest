@@ -183,6 +183,7 @@ public class Executer {
 		
 		// for assignment statement
 		ArrayList<ValueOption> targetInstanceLists = new ArrayList<ValueOption>();
+		ArrayList<Method> methodLists = new ArrayList<Method>();
 		
 		int record = 1;
 		
@@ -206,8 +207,6 @@ public class Executer {
 				case "CALL_RETURN":
 					// コンストラクタ以外
 					if(!createInstanceFlag) {
-//						System.out.println(methodName);
-//						System.out.println(methodOwner);
 						
 						AnalyzerMethod AnalyzerMethod = null;
 						for(int analyzeNum = 0; analyzeNum < analyzerMethodLists.size(); analyzeNum++) {
@@ -217,7 +216,6 @@ public class Executer {
 							
 							if(targetAnalyzerMethod.getName().equals(methodName) && targetAnalyzerMethod.getOwnerClass().getName().equals(analyzerClassName)) {
 								AnalyzerMethod = targetAnalyzerMethod;
-								System.out.println(AnalyzerMethod.getName());
 								break;
 							}
 						}
@@ -228,7 +226,8 @@ public class Executer {
 								for(int recordNum = 0; recordNum < record; recordNum++) {
 									// createMethod
 								 	Method method = this.createMethod(methodValueOptionForId, recordNum, methodName, methodOwner, params, trace);
-									
+									methodLists.add(method);
+								 	
 									// create Method executeStatement
 									String executeStatement = this.createMethodExecuteStatement(method, instanceLists, arrayLists, params);
 									method.setExecuteStatement(executeStatement);
@@ -237,7 +236,7 @@ public class Executer {
 									Instance methodInstance = this.createUnitTest(methodOwner, method, instanceLists, arrayLists, unitTestLists);
 									
 									// add Method to Instance
-									this.addMethodToInstance(method, methodCalledFrom, methodInstance);
+									this.addMethodToInstance(method, methodCalledFrom, methodInstance, methodLists);
 									
 									// create Instance 
 									if(trace.getValuetype().equals("java.lang.Object")) {
@@ -269,6 +268,7 @@ public class Executer {
 					for(int recordNum = 0; recordNum < record; recordNum++) {
 						// 1. create Method
 						Method instanceMethod = this.createObjectInstanceMethod(params, recordNum, trace, methodOwner, methodCalledFrom);
+						methodLists.add(instanceMethod);
 						ArrayList<ValueOption> executeConstructorParams = instanceMethod.getParams();
 						
 						String executeStatement = this.createObjectInstanceMethodExecuteStatement(instanceMethod, executeConstructorParams, instanceLists);
@@ -369,9 +369,17 @@ public class Executer {
 									// 2. assertion文の作成
 									String targetInstanceName = this.getInstanceFromId(targetUnitTest.getMethod().getId(), instanceLists, targetUnitTest.getOwner()).getName();
 									String assertionStatement = "assertEquals(" + targetVariableValue + ", " + targetInstanceName + "." + analyzerVariable.getGetterMethod().getName() + ");";
-									
 									targetUnitTest.addAssertionLists(assertionStatement);
-									targetUnitTest.createUnitTest();
+									for(int methodNum = 0; methodNum < methodLists.size(); methodNum++) {
+										Method targetAssertionMethod = methodLists.get(methodNum);
+										if(targetAssertionMethod.getName().equals(targetUnitTestMethod.getName()) && targetAssertionMethod.getOwner().equals(targetUnitTestMethod.getOwner())) {
+											targetAssertionMethod.setHasAssignment(true);
+										}
+									}
+									
+									for(int unitTestNum = 0; unitTestNum < unitTestLists.size(); unitTestNum++) {
+										unitTestLists.get(unitTestNum).createUnitTest();
+									}
 									break;
 								}
 							}
@@ -511,10 +519,11 @@ public class Executer {
 		return methodInstance;
 	}
 	
-	private void addMethodToInstance(Method method, String methodCalledFrom, Instance methodInstance) {
+	private void addMethodToInstance(Method method, String methodCalledFrom, Instance methodInstance, ArrayList<Method> methodLists) {
 		
 		if(methodInstance != null) {
-			methodInstance.addMethodLists(method);
+			Method tmpMethod = methodInstance.addMethodLists(method);
+			methodLists.add(tmpMethod);
 		}
 	
 	}
@@ -617,12 +626,6 @@ public class Executer {
 		instanceUnitTest.createUnitTest();
 		unitTestLists.add(instanceUnitTest);
 	}
-	
-	
-	
-	
-	
-	
 	
 	private Instance getInstanceFromId(String id, ArrayList<Instance> instanceLists) {
 		Instance instance = null;
