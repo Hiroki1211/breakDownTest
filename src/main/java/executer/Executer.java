@@ -41,11 +41,13 @@ public class Executer {
 	
 	public ArrayList<String> getAnalyzeFile(){
 		ArrayList<String> result = new ArrayList<String>();
-		result.add("src/main/resources/fuga/Executer.java");
-		result.add("src/main/resources/fuga/Formula.java");
-		result.add("src/main/resources/fuga/Lexer.java");
-		result.add("src/main/resources/fuga/Main.java");
-		result.add("src/main/resources/fuga/Parser.java");
+//		result.add("src/main/resources/fuga/Executer.java");
+//		result.add("src/main/resources/fuga/Formula.java");
+//		result.add("src/main/resources/fuga/Lexer.java");
+//		result.add("src/main/resources/fuga/Main.java");
+//		result.add("src/main/resources/fuga/Parser.java");
+		result.add("src/main/resources/bmi/Executer.java");
+		result.add("src/main/resources/bmi/Human.java");
 
 		return result;
 	}
@@ -204,25 +206,43 @@ public class Executer {
 				case "CALL_RETURN":
 					// コンストラクタ以外
 					if(!createInstanceFlag) {
+//						System.out.println(methodName);
+//						System.out.println(methodOwner);
+						
+						AnalyzerMethod AnalyzerMethod = null;
+						for(int analyzeNum = 0; analyzeNum < analyzerMethodLists.size(); analyzeNum++) {
+							AnalyzerMethod targetAnalyzerMethod = analyzerMethodLists.get(analyzeNum);
+							String[] splitAnalyzer = methodOwner.split(Pattern.quote("."));
+							String analyzerClassName = splitAnalyzer[splitAnalyzer.length -1];
+							
+							if(targetAnalyzerMethod.getName().equals(methodName) && targetAnalyzerMethod.getOwnerClass().getName().equals(analyzerClassName)) {
+								AnalyzerMethod = targetAnalyzerMethod;
+								System.out.println(AnalyzerMethod.getName());
+								break;
+							}
+						}
+						
 						record = trace.getRecord();
-						if(methodType.equals("instance")){
-							for(int recordNum = 0; recordNum < record; recordNum++) {
-								// createMethod
-							 	Method method = this.createMethod(methodValueOptionForId, recordNum, methodName, methodOwner, params, trace);
-								
-								// create Method executeStatement
-								String executeStatement = this.createMethodExecuteStatement(method, instanceLists, arrayLists, params);
-								method.setExecuteStatement(executeStatement);
-								
-								// createUnitTest
-								Instance methodInstance = this.createUnitTest(methodOwner, method, instanceLists, arrayLists, unitTestLists);
-								
-								// add Method to Instance
-								this.addMethodToInstance(method, methodCalledFrom, methodInstance);
-								
-								// create Instance 
-								if(trace.getValuetype().equals("java.lang.Object")) {
-									this.createInstance(trace, recordNum, method, instanceLists, methodInstance, arrayLists);
+						if(AnalyzerMethod != null && AnalyzerMethod.getAccessModifier().equals("public")) {
+							if(methodType.equals("instance")){
+								for(int recordNum = 0; recordNum < record; recordNum++) {
+									// createMethod
+								 	Method method = this.createMethod(methodValueOptionForId, recordNum, methodName, methodOwner, params, trace);
+									
+									// create Method executeStatement
+									String executeStatement = this.createMethodExecuteStatement(method, instanceLists, arrayLists, params);
+									method.setExecuteStatement(executeStatement);
+									
+									// createUnitTest
+									Instance methodInstance = this.createUnitTest(methodOwner, method, instanceLists, arrayLists, unitTestLists);
+									
+									// add Method to Instance
+									this.addMethodToInstance(method, methodCalledFrom, methodInstance);
+									
+									// create Instance 
+									if(trace.getValuetype().equals("java.lang.Object")) {
+										this.createInstance(trace, recordNum, method, instanceLists, methodInstance, arrayLists);
+									}
 								}
 							}
 						}
@@ -375,7 +395,9 @@ public class Executer {
 			method.addParams(params.get(j).get(recordNum));
 		}
 		method.setReturnValueType(trace.getAttr().getType());
-		method.setReturnValue(trace.getValue().getValueOptionLists().get(recordNum));
+		if(!trace.getAttr().getType().equals("void")) {
+			method.setReturnValue(trace.getValue().getValueOptionLists().get(recordNum));
+		}
 		
 		return method;
 	}
@@ -474,9 +496,11 @@ public class Executer {
 		unitTest.setMethod(method);
 		// 7. アサーションを追加
 		String assertionStatement;
-		if(!method.getReturnValue().getValue().equals("")) {
-			assertionStatement = this.createAssertion(method.getReturnValue().getValue());
-			unitTest.addAssertionLists(assertionStatement);
+		if(method.getReturnValue() != null && method.getReturnValue().getValue() != null) {
+			if(!method.getReturnValue().getValue().equals("")) {
+				assertionStatement = this.createAssertion(method.getReturnValue().getValue());
+				unitTest.addAssertionLists(assertionStatement);
+			}
 		}
 
 		// 8. unitTest生成

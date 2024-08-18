@@ -67,7 +67,8 @@ public class Analyzer {
 	public ArrayList<String> getFileNameLists(){
 		
 		ArrayList<String> fileNameLists = new ArrayList<String>();
-		fileNameLists.add("src/main/resources/testAnalyzer/Main.java");
+		fileNameLists.add("src/main/resources/bmi/Executer.java");
+		fileNameLists.add("src/main/resources/bmi/Human.java");
 		
 		return fileNameLists;
 	}
