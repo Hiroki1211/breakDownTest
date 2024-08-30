@@ -7,17 +7,20 @@ import tracer.ValueOption;
 
 public class Instance implements Cloneable{
 
-	private ArrayList<String> constructorLists = new ArrayList<String>();
-	private ArrayList<ValueOption> constructorParams = new ArrayList<ValueOption>();
-	private ArrayList<Instance> constructorParamInstanceLists = new ArrayList<Instance>();
-	private ArrayList<Array> constructorParamArrayLists = new ArrayList<Array>();
+	private ArrayList<Method> constructorLists = new ArrayList<Method>();
+	private ArrayList<String> constructorArrayLists = new ArrayList<String>();
 	private ArrayList<Method> methodLists = new ArrayList<Method>();
 	private String owner;
 	private String id;
 	private String name;
 	private String className;
 	
-	public void createConstructorStatement(ArrayList<Instance> instanceLists, ArrayList<Array> arrayLists, String constructor) {
+	// for createConstructor
+	private ArrayList<ValueOption> constructorParams = new ArrayList<ValueOption>();
+	private ArrayList<Instance> constructorParamInstanceLists = new ArrayList<Instance>();
+	private ArrayList<Array> constructorParamArrayLists = new ArrayList<Array>();
+	
+	public void createConstructorStatement(ArrayList<Instance> instanceLists, ArrayList<Array> arrayLists, Method constructor) {
 		// コンストラクタのパラメータ処理
 		if(constructorParams.size() == 0) {
 			constructorLists.add(constructor);
@@ -52,7 +55,7 @@ public class Instance implements Cloneable{
 			// for Instance
 			for(int i = 0; i < constructorParamInstanceLists.size(); i++) {
 				Instance targetParamInstance = constructorParamInstanceLists.get(i);
-				ArrayList<String> targetParamInstanceConstructorLists = targetParamInstance.getConstructorLists();
+				ArrayList<Method> targetParamInstanceConstructorLists = targetParamInstance.getConstructorLists();
 				for(int j = 0; j < targetParamInstanceConstructorLists.size(); j++) {
 					constructorLists.add(targetParamInstanceConstructorLists.get(j));
 				}
@@ -60,14 +63,14 @@ public class Instance implements Cloneable{
 			
 			// for Array
 			for(int i = 0; i < constructorParamArrayLists.size(); i++) {
-				constructorLists.add(constructorParamArrayLists.get(i).getDeclareStatement());
+				constructorArrayLists.add(constructorParamArrayLists.get(i).getDeclareStatement());
 			}
 			
 			constructorLists.add(constructor);
 		}
 	}
 	
-	public void createConstructorStatement(ArrayList<Instance> instanceLists, ArrayList<Array> arrayLists) {
+	public Method createConstructorStatement(ArrayList<Instance> instanceLists, ArrayList<Array> arrayLists) {
 		String[] split = owner.split(Pattern.quote("."));
 		className = split[split.length - 1];
 		
@@ -76,7 +79,6 @@ public class Instance implements Cloneable{
 		// コンストラクタのパラメータ処理
 		if(constructorParams.size() == 0) {
 			constructor += ");";
-			constructorLists.add(constructor);
 		}else {
 			for(int i = 0; i < constructorParams.size(); i++) {
 				String param = null;
@@ -117,7 +119,7 @@ public class Instance implements Cloneable{
 			// for Instance
 			for(int i = 0; i < constructorParamInstanceLists.size(); i++) {
 				Instance targetParamInstance = constructorParamInstanceLists.get(i);
-				ArrayList<String> targetParamInstanceConstructorLists = targetParamInstance.getConstructorLists();
+				ArrayList<Method> targetParamInstanceConstructorLists = targetParamInstance.getConstructorLists();
 				for(int j = 0; j < targetParamInstanceConstructorLists.size(); j++) {
 					constructorLists.add(targetParamInstanceConstructorLists.get(j));
 				}
@@ -125,16 +127,21 @@ public class Instance implements Cloneable{
 			
 			// for Array
 			for(int i = 0; i < constructorParamArrayLists.size(); i++) {
-				constructorLists.add(constructorParamArrayLists.get(i).getDeclareStatement());
+				constructorArrayLists.add(constructorParamArrayLists.get(i).getDeclareStatement());
 			}
 			
-			constructorLists.add(constructor);
 		}
+		
+		Method method = new Method();
+		method.setExecuteStatement(constructor);
+		method.setOwner(owner);
+		
+		return method;
 	}
 	
 	public Instance clone() {
 		Instance instance = new Instance();
-		instance.setConstructorLists(new ArrayList<String>(this.getConstructorLists()));
+		instance.setConstructorLists(new ArrayList<Method>(this.getConstructorLists()));
 		instance.setConstructorParams(new ArrayList<ValueOption>(this.getConstructorParams()));
 		instance.setConstructorParamInstanceLists(new ArrayList<Instance>(this.getConstructorParamInstanceLists()));
 		instance.setConstructorParamArrayLists(new ArrayList<Array>(this.getConstructorParamArrayLists()));
@@ -147,7 +154,7 @@ public class Instance implements Cloneable{
 		return instance;
 	}
 	
-	public void setConstructorLists(ArrayList<String> input) {
+	public void setConstructorLists(ArrayList<Method> input) {
 		constructorLists = input;
 	}
 	
@@ -209,7 +216,7 @@ public class Instance implements Cloneable{
 		className = input;
 	}
 	
-	public ArrayList<String> getConstructorLists() {
+	public ArrayList<Method> getConstructorLists() {
 		return constructorLists;
 	}
 	

@@ -12,6 +12,7 @@ public class Method {
 	private String executeStatement;
 	private String owner;
 	private String returnValueType;
+	private String returnValueOwner;
 	private ValueOption returnValue;
 	private String id;
 	private String calledFrom;
@@ -30,6 +31,7 @@ public class Method {
 		method.setCalledFrom(calledFrom);
 		method.setOwnerValueOption(ownerValueOption);
 		method.setHasAssignment(hasAssignment);
+		method.setReturnValueOwner(returnValueOwner);
 		return method;
 	}
 	
@@ -56,6 +58,11 @@ public class Method {
 	public void setReturnValueType(String input) {
 		String[] splitOwner = input.split(Pattern.quote("."));
 		returnValueType = splitOwner[splitOwner.length - 1];
+		returnValueOwner = input;
+	}
+	
+	private void setReturnValueOwner(String input) {
+		returnValueOwner = input;
 	}
 	
 	public void setReturnValue(ValueOption input) {
@@ -96,6 +103,10 @@ public class Method {
 	
 	public String getReturnValueType() {
 		return returnValueType;
+	}
+	
+	public String getReturnValueOwner() {
+		return returnValueOwner;
 	}
 	
 	public ValueOption getReturnValue() {

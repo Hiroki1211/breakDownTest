@@ -19,12 +19,15 @@ public class Executer {
 	private ArrayList<Trace> traceLists;
 	private static String inputFileName = "src/main/resources/trace.json";
 	private static String packageName = "breakDownTest";
+	
+	private ArrayList<String> excludeOwner = this.getExcludeOwner();
 
 	public Executer(ArrayList<Trace> t) {
 		traceLists = t;
 	}
 	
 	public static void main(String[] argv) {
+		long startTime = System.currentTimeMillis();
 		File inputFile = new File(inputFileName);
 		Lexer lexer = new Lexer(inputFile);
 		ArrayList<Trace> traceLists = lexer.getTraceLists();
@@ -32,24 +35,37 @@ public class Executer {
 		Executer executer = new Executer(traceLists);
 		ArrayList<String> analyzeTargetLists = executer.getAnalyzeFile();
 		analyzer.run(analyzeTargetLists);
-//		analyzer.displayVariableLists();
-//		analyzer.displayMethodLists();
 		ArrayList<AnalyzerMethod> analyzerMethodLists = analyzer.getMethodLists();
 		ArrayList<AnalyzerVariable> analyzerVariableLists = analyzer.getVariableLists();
 		executer.run(analyzerMethodLists, analyzerVariableLists);
+		long endTime = System.currentTimeMillis();
+		System.out.println("処理時間：" + (endTime - startTime) + " ms");
 	}
 	
 	public ArrayList<String> getAnalyzeFile(){
 		ArrayList<String> result = new ArrayList<String>();
-//		result.add("src/main/resources/fuga/Executer.java");
-//		result.add("src/main/resources/fuga/Formula.java");
-//		result.add("src/main/resources/fuga/Lexer.java");
-//		result.add("src/main/resources/fuga/Main.java");
-//		result.add("src/main/resources/fuga/Parser.java");
-		result.add("src/main/resources/bmi/Executer.java");
-		result.add("src/main/resources/bmi/Human.java");
+//		result.add("src/main/resources/forExample/Calculator.java");
+//		result.add("src/main/resources/forExample/Executer.java");
+		result.add("src/main/resources/fuga/Executer.java");
+		result.add("src/main/resources/fuga/Formula.java");
+		result.add("src/main/resources/fuga/Lexer.java");
+		result.add("src/main/resources/fuga/Main.java");
+		result.add("src/main/resources/fuga/Parser.java");
 
 		return result;
+	}
+	
+	public ArrayList<String> getExcludeOwner(){
+		ArrayList<String> excludeOwner = new ArrayList<String>();
+		excludeOwner.add("void");
+		excludeOwner.add("boolean");
+		excludeOwner.add("char");
+		excludeOwner.add("double");
+		excludeOwner.add("float");
+		excludeOwner.add("int");
+		excludeOwner.add("java.lang.String");
+		
+		return excludeOwner;
 	}
 	
 	public void run(ArrayList<AnalyzerMethod> analyzerMethodLists, ArrayList<AnalyzerVariable> analyzerVariableLists) {
@@ -86,7 +102,60 @@ public class Executer {
 					fw.write("\n");
 					fw.write("import static org.junit.Assert.*;\n");
 					fw.write("import org.junit.Test;\n");
-//					fw.write("import " + unitTestGroup.getOwner() + ";");
+					fw.write("\n");
+					
+					ArrayList<String> ownerLists = new ArrayList<String>();
+					ArrayList<Method> unitTestMethodLists = new ArrayList<Method>();
+					ArrayList<UnitTest> unitTestLists = unitTestGroup.getUnitTestLists();
+					
+					for(int j = 0; j < unitTestLists.size(); j++) {
+						UnitTest unitTest = unitTestLists.get(j);
+						ArrayList<Method> constructorLists = unitTest.getConstructorLists();
+						ArrayList<Method> constructorArgumentLists = unitTest.getConstructorArgumentLists();
+						ArrayList<Method> methodLists = unitTest.getMethodLists();
+						ArrayList<Method> argumentMethodLists = unitTest.getArgumentMethodLists();
+						
+						for(int k = 0; k < constructorLists.size(); k++) {
+							unitTestMethodLists.add(constructorLists.get(k));
+						}
+						
+						for(int k = 0; k < constructorArgumentLists.size(); k++) {
+							unitTestMethodLists.add(constructorArgumentLists.get(k));
+						}
+						
+						for(int k = 0; k < methodLists.size(); k++) {
+							unitTestMethodLists.add(methodLists.get(k));
+						}
+						
+						for(int k = 0; k < argumentMethodLists.size(); k++) {
+							unitTestMethodLists.add(argumentMethodLists.get(k));
+						}
+						
+						unitTestMethodLists.add(unitTest.getMethod());
+					}
+					
+					for(int j = 0; j < unitTestMethodLists.size(); j++) {
+						Method unitTestMethod = unitTestMethodLists.get(j);
+						if(ownerLists.size() == 0) {
+							ownerLists.add(unitTestMethod.getOwner());
+						}else {
+							if(!ownerLists.contains(unitTestMethod.getOwner())) {
+								ownerLists.add(unitTestMethod.getOwner());
+							}
+						}
+						
+						if(!ownerLists.contains(unitTestMethod.getReturnValueOwner()) && !unitTestMethod.getReturnValueOwner().equals("")) {
+							String forOwnerList = unitTestMethod.getReturnValueOwner().replace("[]", "");
+							if(!excludeOwner.contains(forOwnerList)) {
+								ownerLists.add(forOwnerList);
+							}
+						}
+					}
+					
+					for(int j = 0; j < ownerLists.size(); j++) {
+						fw.write("import " + ownerLists.get(j) + ";\n");
+					}
+					
 					fw.write("\n");
 					fw.write("public class " + fileName + " {\n");
 					fw.write("\n");
@@ -102,7 +171,6 @@ public class Executer {
 					fw.write("}");
 					fw.close();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -273,15 +341,14 @@ public class Executer {
 						// 1. create Method
 						Method instanceMethod = this.createObjectInstanceMethod(params, recordNum, trace, methodOwner, methodCalledFrom);
 						methodLists.add(instanceMethod);
-						ArrayList<ValueOption> executeConstructorParams = instanceMethod.getParams();
 						
+						ArrayList<ValueOption> executeConstructorParams = instanceMethod.getParams();
 						String executeStatement = this.createObjectInstanceMethodExecuteStatement(instanceMethod, executeConstructorParams, instanceLists);
 						instanceMethod.setExecuteStatement(executeStatement);
 						
 						// 2. create UnitTest
 						this.createObjectUnitTest(methodOwner, executeConstructorParams, instanceLists, instanceMethod, unitTestLists);
 					}
-					
 					
 					// 初期化
 					params = new ArrayList<ArrayList<ValueOption>>();
@@ -372,7 +439,7 @@ public class Executer {
 								if(targetUnitTestMethod.getId().equals(targetInstance.getId()) && targetUnitTestMethod.getName().equals(targetMethodName)) {
 									// 2. assertion文の作成
 									String targetInstanceName = this.getInstanceFromId(targetUnitTest.getMethod().getId(), instanceLists, targetUnitTest.getOwner()).getName();
-									String assertionStatement = "assertEquals(" + targetVariableValue + ", " + targetInstanceName + "." + analyzerVariable.getGetterMethod().getName() + ");";
+									String assertionStatement = "assertEquals(" + targetVariableValue + ", " + targetInstanceName + "." + analyzerVariable.getGetterMethod().getName() + "());";
 									targetUnitTest.addAssertionLists(assertionStatement);
 									for(int methodNum = 0; methodNum < methodLists.size(); methodNum++) {
 										Method targetAssertionMethod = methodLists.get(methodNum);
@@ -465,7 +532,7 @@ public class Executer {
 			if(!valueOption.getId().equals("")) {
 				Instance argumentInstance = this.getInstanceFromId(valueOption.getId(), instanceLists);
 				if(argumentInstance != null) {
-					ArrayList<String> constructorArgumentConstructorLists = argumentInstance.getConstructorLists();
+					ArrayList<Method> constructorArgumentConstructorLists = argumentInstance.getConstructorLists();
 					for(int j = 0; j < constructorArgumentConstructorLists.size(); j++) {
 						unitTest.addConstructorArgumentLists(constructorArgumentConstructorLists.get(j));
 					}
@@ -478,7 +545,7 @@ public class Executer {
 			if(!valueOption.getId().equals("")) {
 				Array argumentArray = this.getArrayFromId(valueOption.getId(), arrayLists);
 				if(argumentArray != null) {
-					unitTest.addConstructorArgumentLists(argumentArray.getDeclareStatement());
+					unitTest.addConstructorArrayLists(argumentArray.getDeclareStatement());
 				}
 			}
 		}
@@ -536,9 +603,14 @@ public class Executer {
 			instance.addConstructorParamInstanceLists(methodInstance);
 		}
 		instance.setConstructorParams(method.getParams());
+		
 		String methodExecuteStatement = method.getExecuteStatement();
 		methodExecuteStatement = methodExecuteStatement.replace("result", instance.getName());
-		instance.createConstructorStatement(instanceLists, arrayLists, methodExecuteStatement);
+		
+		Method instanceMethod = method.clone();
+		instanceMethod.setExecuteStatement(methodExecuteStatement);
+		
+		instance.createConstructorStatement(instanceLists, arrayLists, instanceMethod);
 	}
 	
 	private void createObjectInstance(int record, Trace trace, ArrayList<Instance> instanceLists, ArrayList<ArrayList<ValueOption>> params, ArrayList<Array> arrayLists) {
@@ -565,9 +637,7 @@ public class Executer {
 			instanceMethod.addParams(params.get(j).get(recordNum));
 		}
 		instanceMethod.setOwner(trace.getValue().getValueOptionLists().get(recordNum).getType());
-		String tmp = methodOwner;
-		String[] tmpSplit = tmp.split(Pattern.quote("."));
-		instanceMethod.setReturnValueType(tmpSplit[tmpSplit.length - 1]);
+		instanceMethod.setReturnValueType(methodOwner);
 		instanceMethod.setReturnValue(trace.getValue().getValueOptionLists().get(recordNum));
 		instanceMethod.setId(trace.getValue().getValueOptionLists().get(recordNum).getId());
 		instanceMethod.setCalledFrom(methodCalledFrom);
@@ -596,6 +666,10 @@ public class Executer {
 			}
 		}
 		executeStatement += ");";
+		
+		ArrayList<Method> constructorLists = new ArrayList<Method>();
+		constructorLists.add(instanceMethod);
+		tmpInstance.setConstructorLists(constructorLists);
 		
 		return executeStatement;
 	}

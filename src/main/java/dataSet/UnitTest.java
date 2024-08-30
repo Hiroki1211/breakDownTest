@@ -4,12 +4,14 @@ import java.util.ArrayList;
 
 public class UnitTest {
 
-	private ArrayList<String> constructorLists = new ArrayList<String>();
-	private ArrayList<String> constructorArgumentLists = new ArrayList<String>();
+	private ArrayList<Method> constructorLists = new ArrayList<Method>();
+	private ArrayList<Method> constructorArgumentLists = new ArrayList<Method>();
 	private ArrayList<Method> methodLists = new ArrayList<Method>();
 	private ArrayList<Method> argumentMethodLists = new ArrayList<Method>();
 	private Method method = null;
 	private ArrayList<String> assertionLists = new ArrayList<String>();
+	
+	private ArrayList<String> constructorArrayLists = new ArrayList<String>();
 	private String owner;
 	
 	private ArrayList<String> unitTestStatement = new ArrayList<String>();
@@ -24,12 +26,12 @@ public class UnitTest {
 		
 		unitTestStatement.add("\t" + "// create Instance for Method");
 		for(int i = 0; i < constructorLists.size(); i++) {
-			unitTestStatement.add("\t" + constructorLists.get(i));
+			unitTestStatement.add("\t" + constructorLists.get(i).getExecuteStatement());
 		}
 		
 		unitTestStatement.add("\t" + "// create Instance for Method Argument");
 		for(int i = 0; i < constructorArgumentLists.size(); i++) {
-			unitTestStatement.add("\t" + constructorArgumentLists.get(i));
+			unitTestStatement.add("\t" + constructorArgumentLists.get(i).getExecuteStatement());
 		}
 		
 		unitTestStatement.add("\t" + "// execute Method for Instance of Method");
@@ -57,11 +59,11 @@ public class UnitTest {
 		unitTestStatement.add("}");
 	}
 	
-	public void setConstructorLists(ArrayList<String> input) {
+	public void setConstructorLists(ArrayList<Method> input) {
 		constructorLists = input;
 	}
 	
-	public void addConstructorArgumentLists(String input) {
+	public void addConstructorArgumentLists(Method input) {
 		constructorArgumentLists.add(input);
 	}
 	
@@ -81,15 +83,19 @@ public class UnitTest {
 		assertionLists.add(input);
 	}
 	
+	public void addConstructorArrayLists(String input) {
+		constructorArrayLists.add(input);
+	}
+	
 	public void setOwner(String input) {
 		owner = input;
 	}
 	
-	public ArrayList<String> getConstructorLists() {
+	public ArrayList<Method> getConstructorLists() {
 		return constructorLists;
 	}
 	
-	public ArrayList<String> getConstructorArgumentLists(){
+	public ArrayList<Method> getConstructorArgumentLists(){
 		return constructorArgumentLists;
 	}
 	
@@ -107,6 +113,10 @@ public class UnitTest {
 	
 	public ArrayList<String> getAssertionLists(){
 		return assertionLists;
+	}
+	
+	public ArrayList<String> getConstructorArrayLists(){
+		return constructorArrayLists;
 	}
 	
 	public String getOwner() {
