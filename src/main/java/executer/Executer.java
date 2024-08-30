@@ -46,11 +46,14 @@ public class Executer {
 		ArrayList<String> result = new ArrayList<String>();
 //		result.add("src/main/resources/forExample/Calculator.java");
 //		result.add("src/main/resources/forExample/Executer.java");
-		result.add("src/main/resources/fuga/Executer.java");
-		result.add("src/main/resources/fuga/Formula.java");
-		result.add("src/main/resources/fuga/Lexer.java");
-		result.add("src/main/resources/fuga/Main.java");
-		result.add("src/main/resources/fuga/Parser.java");
+		
+//		result.add("src/main/resources/fuga/Executer.java");
+//		result.add("src/main/resources/fuga/Formula.java");
+//		result.add("src/main/resources/fuga/Lexer.java");
+//		result.add("src/main/resources/fuga/Main.java");
+//		result.add("src/main/resources/fuga/Parser.java");
+		
+		result.add("src/main/resources/forArray/Main.java");
 
 		return result;
 	}
@@ -114,6 +117,7 @@ public class Executer {
 						ArrayList<Method> constructorArgumentLists = unitTest.getConstructorArgumentLists();
 						ArrayList<Method> methodLists = unitTest.getMethodLists();
 						ArrayList<Method> argumentMethodLists = unitTest.getArgumentMethodLists();
+						ArrayList<Method> arrayMethodLists = unitTest.getConstructorArrayLists();
 						
 						for(int k = 0; k < constructorLists.size(); k++) {
 							unitTestMethodLists.add(constructorLists.get(k));
@@ -131,16 +135,26 @@ public class Executer {
 							unitTestMethodLists.add(argumentMethodLists.get(k));
 						}
 						
+						for(int k = 0; k < arrayMethodLists.size(); k++) {
+							unitTestMethodLists.add(arrayMethodLists.get(k));
+						}
+						
 						unitTestMethodLists.add(unitTest.getMethod());
 					}
 					
 					for(int j = 0; j < unitTestMethodLists.size(); j++) {
 						Method unitTestMethod = unitTestMethodLists.get(j);
+						String forOwner = unitTestMethod.getOwner().replace("[]", "");
+						
 						if(ownerLists.size() == 0) {
-							ownerLists.add(unitTestMethod.getOwner());
+							if(!excludeOwner.contains(forOwner)) {
+								ownerLists.add(forOwner);
+							}
 						}else {
 							if(!ownerLists.contains(unitTestMethod.getOwner())) {
-								ownerLists.add(unitTestMethod.getOwner());
+								if(!excludeOwner.contains(forOwner)) {
+									ownerLists.add(forOwner);
+								}
 							}
 						}
 						
@@ -252,6 +266,7 @@ public class Executer {
 		ArrayList<String> arrayIdLists = new ArrayList<String>();
 		ArrayList<String> arrayIndexLists = new ArrayList<String>();
 		ArrayList<String> arrayTypeLists = new ArrayList<String>();
+		ArrayList<String> indexLists = new ArrayList<String>();
 		
 		// for assignment statement
 		ArrayList<ValueOption> targetInstanceLists = new ArrayList<ValueOption>();
@@ -355,6 +370,14 @@ public class Executer {
 					
 					break;
 				
+				case "NEW_ARRAY":
+					record = trace.getRecord();
+					for(int recordNum = 0; recordNum < record; recordNum++) {
+						indexLists.add(trace.getValue().getValueOptionLists().get(recordNum).getValue());
+					}
+					
+					break;
+				
 				case "NEW_ARRAY_RESULT":
 					record = trace.getRecord();
 					for(int recordNum = 0; recordNum < record; recordNum++) {
@@ -362,8 +385,12 @@ public class Executer {
 						ValueOption arrayValueOption = trace.getValue().getValueOptionLists().get(recordNum);
 						array.setId(arrayValueOption.getId());
 						array.setType(arrayValueOption.getType());
+						array.setIndex(indexLists.get(recordNum));
+						array.setName("array" + arrayLists.size());
+						array.createConstructor(trace.getSeqnum().get(recordNum));
 						
 						arrayLists.add(array);
+						indexLists = new ArrayList<String>();
 					}
 					
 					break;
@@ -392,6 +419,7 @@ public class Executer {
 						storeArray.setId(arrayIdLists.get(recordNum));
 						storeArray.setType(arrayTypeLists.get(recordNum));
 						storeArray.addValue(trace.getValue().getValueOptionLists().get(recordNum).getValue(), Integer.valueOf(arrayIndexLists.get(recordNum)));
+						storeArray.createStoreMethod(trace.getSeqnum().get(recordNum), arrayIndexLists.get(recordNum), trace.getValue().getValueOptionLists().get(recordNum).getValue());
 					}
 					
 					// 初期化
@@ -503,7 +531,7 @@ public class Executer {
 						
 						Array array = this.getArrayFromId(method.getParams().get(executeParamNum).getId(), arrayLists);
 						if(array != null) {
-							param = instance.getName();
+							param = array.getName();
 						}
 					}
 					
@@ -546,7 +574,10 @@ public class Executer {
 			if(!valueOption.getId().equals("")) {
 				Array argumentArray = this.getArrayFromId(valueOption.getId(), arrayLists);
 				if(argumentArray != null) {
-					unitTest.addConstructorArrayLists(argumentArray.getDeclareStatement());
+					ArrayList<Method> argumentArrayMethodLists = argumentArray.getMethodLists();
+					for(int arrayNum = 0; arrayNum < argumentArrayMethodLists.size(); arrayNum++) {
+						unitTest.addConstructorArrayLists(argumentArrayMethodLists.get(arrayNum));
+					}
 				}
 			}
 		}

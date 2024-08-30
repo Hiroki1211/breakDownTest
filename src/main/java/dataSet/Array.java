@@ -9,6 +9,32 @@ public class Array {
 	private String type;
 	private ArrayList<String> value = new ArrayList<String>();
 	
+	private String owner;
+	private String index;
+	private ArrayList<Method> methodLists = new ArrayList<Method>();
+	
+	public void createConstructor(int seqnum) {
+		Method method = new Method();
+		String executeStatement = type + " " + name + "[] = new " + owner + "[" + index + "];";
+		method.setOwner(owner);
+		method.setExecuteStatement(executeStatement);
+		method.setReturnValueType(owner);
+		method.setSeqnum(seqnum);
+		
+		methodLists.add(method);
+	}
+	
+	public void createStoreMethod(int seqnum, String targetIndex, String value) {
+		Method method = new Method();
+		String executeStatement = name + "[" + targetIndex + "] = " + value + ";";
+		method.setExecuteStatement(executeStatement);
+		method.setOwner(owner);
+		method.setReturnValueType(owner);
+		method.setSeqnum(seqnum);
+		
+		methodLists.add(method);
+	}
+	
 	public String getDeclareStatement() {
 		String declareStatement = type + " " + name + " = {";
 		for(int i = 0; i < value.size(); i++) {
@@ -27,6 +53,10 @@ public class Array {
 		array.setName(this.getName());
 		array.setType(this.getType());
 		array.setValue(this.getValue());
+		array.setId(index);
+		array.setOwner(owner);
+		array.setMethodLists(methodLists);
+		
 		return array;
 	}
 	
@@ -40,6 +70,23 @@ public class Array {
 	
 	public void setType(String input) {
 		type = input;
+		owner = type.replace("[]", "");
+	}
+	
+	private void setOwner(String input) {
+		owner = input;
+	}
+	
+	public void setIndex(String input) {
+		index = input;
+	}
+	
+	private void setMethodLists(ArrayList<Method> input) {
+		methodLists = new ArrayList<Method>(input);
+	}
+	
+	public void addMethodLists(Method method) {
+		methodLists.add(method);
 	}
 	
 	public void addValue(String input, int index) {
@@ -64,6 +111,10 @@ public class Array {
 	
 	public String getType() {
 		return type;
+	}
+	
+	public ArrayList<Method> getMethodLists(){
+		return methodLists;
 	}
 	
 	public ArrayList<String> getValue(){

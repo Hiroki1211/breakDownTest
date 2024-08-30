@@ -12,7 +12,7 @@ public class UnitTest {
 	private Method method = null;
 	private ArrayList<String> assertionLists = new ArrayList<String>();
 	
-	private ArrayList<String> constructorArrayLists = new ArrayList<String>();
+	private ArrayList<Method> constructorArrayLists = new ArrayList<Method>();
 	private String owner;
 	
 	private ArrayList<String> unitTestStatement = new ArrayList<String>();
@@ -36,11 +36,19 @@ public class UnitTest {
 		}
 		
 		for(int i = 0; i < methodLists.size(); i++) {
-			forCreateMethodLists.add(methodLists.get(i));
+			if(methodLists.get(i).getHasAssignment()) {
+				forCreateMethodLists.add(methodLists.get(i));
+			}
 		}
 		
 		for(int i = 0; i < argumentMethodLists.size(); i++) {
-			forCreateMethodLists.add(argumentMethodLists.get(i));
+			if(argumentMethodLists.get(i).getHasAssignment()) {
+				forCreateMethodLists.add(argumentMethodLists.get(i));
+			}
+		}
+		
+		for(int i = 0; i < constructorArrayLists.size(); i++) {
+			forCreateMethodLists.add(constructorArrayLists.get(i));
 		}
 		
 		for(int i = 0; i < forCreateMethodLists.size(); i++) {
@@ -98,7 +106,7 @@ public class UnitTest {
 		assertionLists.add(input);
 	}
 	
-	public void addConstructorArrayLists(String input) {
+	public void addConstructorArrayLists(Method input) {
 		constructorArrayLists.add(input);
 	}
 	
@@ -130,7 +138,7 @@ public class UnitTest {
 		return assertionLists;
 	}
 	
-	public ArrayList<String> getConstructorArrayLists(){
+	public ArrayList<Method> getConstructorArrayLists(){
 		return constructorArrayLists;
 	}
 	
