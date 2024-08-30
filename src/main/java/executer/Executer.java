@@ -467,6 +467,7 @@ public class Executer {
 		method.setName(methodName);
 		method.setOwner(methodOwner);
 		method.setOwnerValueOption(methodValueOptionForId.get(recordNum));
+		method.setSeqnum(trace.getSeqnum().get(recordNum));
 		for(int j = 0; j < params.size(); j++) {
 			method.addParams(params.get(j).get(recordNum));
 		}
@@ -624,7 +625,7 @@ public class Executer {
 				instance.addConstructorParams(params.get(constructorParamNum).get(recordNum));
 			}
 			
-			instance.createConstructorStatement(instanceLists, arrayLists);
+			instance.createConstructorStatement(instanceLists, arrayLists, trace.getSeqnum().get(recordNum));
 			instanceLists.add(instance);
 		}
 		
@@ -642,6 +643,7 @@ public class Executer {
 		instanceMethod.setId(trace.getValue().getValueOptionLists().get(recordNum).getId());
 		instanceMethod.setCalledFrom(methodCalledFrom);
 		instanceMethod.setOwnerValueOption(trace.getValue().getValueOptionLists().get(recordNum));
+		instanceMethod.setSeqnum(trace.getSeqnum().get(recordNum));
 		
 		return instanceMethod;
 	}

@@ -70,7 +70,7 @@ public class Instance implements Cloneable{
 		}
 	}
 	
-	public Method createConstructorStatement(ArrayList<Instance> instanceLists, ArrayList<Array> arrayLists) {
+	public Method createConstructorStatement(ArrayList<Instance> instanceLists, ArrayList<Array> arrayLists, int seqnum) {
 		String[] split = owner.split(Pattern.quote("."));
 		className = split[split.length - 1];
 		
@@ -135,6 +135,7 @@ public class Instance implements Cloneable{
 		Method method = new Method();
 		method.setExecuteStatement(constructor);
 		method.setOwner(owner);
+		method.setSeqnum(seqnum);
 		
 		return method;
 	}

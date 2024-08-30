@@ -1,6 +1,7 @@
 package dataSet;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class UnitTest {
 
@@ -24,28 +25,42 @@ public class UnitTest {
 		unitTestStatement = new ArrayList<String>();
 		unitTestStatement.add("@Test");
 		
-		unitTestStatement.add("\t" + "// create Instance for Method");
+		ArrayList<Method> forCreateMethodLists = new ArrayList<Method>();
+		
 		for(int i = 0; i < constructorLists.size(); i++) {
-			unitTestStatement.add("\t" + constructorLists.get(i).getExecuteStatement());
+			forCreateMethodLists.add(constructorLists.get(i));
 		}
 		
-		unitTestStatement.add("\t" + "// create Instance for Method Argument");
 		for(int i = 0; i < constructorArgumentLists.size(); i++) {
-			unitTestStatement.add("\t" + constructorArgumentLists.get(i).getExecuteStatement());
+			forCreateMethodLists.add(constructorArgumentLists.get(i));
 		}
 		
-		unitTestStatement.add("\t" + "// execute Method for Instance of Method");
 		for(int i = 0; i < methodLists.size(); i++) {
-			if(methodLists.get(i).getHasAssignment()) {
-				unitTestStatement.add("\t" + methodLists.get(i).getExecuteStatement());
+			forCreateMethodLists.add(methodLists.get(i));
+		}
+		
+		for(int i = 0; i < argumentMethodLists.size(); i++) {
+			forCreateMethodLists.add(argumentMethodLists.get(i));
+		}
+		
+		for(int i = 0; i < forCreateMethodLists.size(); i++) {
+			int minSeqnum = forCreateMethodLists.get(i).getSeqNum();
+			int minSeqnumMethodIndex = i;
+			
+			for(int j = i; j < forCreateMethodLists.size(); j++) {
+				if(minSeqnum > forCreateMethodLists.get(j).getSeqNum()) {
+					minSeqnum = forCreateMethodLists.get(j).getSeqNum();
+					minSeqnumMethodIndex = j;
+				}
+			}
+			
+			if(minSeqnumMethodIndex != i) {
+				Collections.swap(forCreateMethodLists, i, minSeqnumMethodIndex);
 			}
 		}
 		
-		unitTestStatement.add("\t" + "// execute Method for Instance of Method Argument");
-		for(int i = 0; i < argumentMethodLists.size(); i++) {
-			if(argumentMethodLists.get(i).getHasAssignment()) {
-				unitTestStatement.add("\t" + argumentMethodLists.get(i).getExecuteStatement());
-			}
+		for(int i = 0; i < forCreateMethodLists.size(); i++) {
+			unitTestStatement.add("\t" + forCreateMethodLists.get(i).getExecuteStatement());
 		}
 		
 		unitTestStatement.add("\t" + "// execute Target Method");

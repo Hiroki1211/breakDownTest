@@ -19,6 +19,8 @@ public class Method {
 	private ValueOption ownerValueOption;
 	private boolean hasAssignment = false;
 	
+	private int seqnum;
+	
 	public Method clone() {
 		Method method = new Method();
 		method.setName(name);
@@ -32,6 +34,7 @@ public class Method {
 		method.setOwnerValueOption(ownerValueOption);
 		method.setHasAssignment(hasAssignment);
 		method.setReturnValueOwner(returnValueOwner);
+		method.setSeqnum(seqnum);
 		return method;
 	}
 	
@@ -85,6 +88,10 @@ public class Method {
 		hasAssignment = input;
 	}
 	
+	public void setSeqnum(int input) {
+		seqnum = input;
+	}
+	
 	public String getName() {
 		return name;
 	}
@@ -127,5 +134,9 @@ public class Method {
 	
 	public boolean getHasAssignment() {
 		return hasAssignment;
+	}
+	
+	public int getSeqNum() {
+		return seqnum;
 	}
 }

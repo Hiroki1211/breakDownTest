@@ -65,10 +65,15 @@ public class Lexer {
 									mode = traceMode1(splitContent, trace, attr);
 								}else if(mode == 2) {
 									mode = traceMode2(splitContent, trace, value);
+								}else if(mode == 3) {
+									mode = traceMode3(splitContent, trace);
 								}
 							}else if(mode == 2) {
 								splitContent[0] = trimBracket(splitContent[0]);
 								value.addValue(splitContent[0]);
+							}else if(mode == 3) {
+								splitContent[0] = trimBracket(splitContent[0]);
+								trace.addSeqnum(splitContent[0]);
 							}
 							splitIndex += 1;
 						}
@@ -146,6 +151,9 @@ public class Lexer {
 					value.addValue(trimBracket);
 				}
 				break;
+			case "seqnum":
+				splitContent[1] = trimBracket(splitContent[1]);
+				trace.addSeqnum(splitContent[1]);
 			case "thread":
 				trace.setThread(splitContent[1]);
 			default:
@@ -234,13 +242,27 @@ public class Lexer {
 				value.addStr(splitContent[1]);
 				break;
 			case "seqnum":
-				mode = 0;
-				trace.setSeqnum(splitContent[1]);
+				mode = 3;
+				splitContent[1] = trimBracket(splitContent[1]);
+				trace.addSeqnum(splitContent[1]);
 				break;
 			case "thread":
 				mode = 0;
 				trace.setThread(splitContent[1]);
 				break;
+		}
+		
+		return mode;
+	}
+	
+	private int traceMode3(String[] splitContent, Trace trace) {
+		int mode = 3;
+		
+		switch(splitContent[0]) {
+		case "thread":
+			mode = 0;
+			trace.setThread(splitContent[1]);
+			break;
 		}
 		
 		return mode;

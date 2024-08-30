@@ -1,5 +1,7 @@
 package tracer;
 
+import java.util.ArrayList;
+
 public class Trace {
 
 	private String loadedFrom;
@@ -16,7 +18,7 @@ public class Trace {
 	private int freq;
 	private int record;
 	private Value value = new Value();
-	private String seqnum;
+	private ArrayList<Integer> seqnum = new ArrayList<Integer>();
 	private String thread;
 	
 	public void displayContent() {
@@ -84,8 +86,9 @@ public class Trace {
 		value = input;
 	}
 	
-	public void setSeqnum(String input) {
-		seqnum = input;
+	public void addSeqnum(String input) {
+		int value = Integer.valueOf(input);
+		seqnum.add(value);
 	}
 	
 	public void setThread(String input) {
@@ -148,7 +151,7 @@ public class Trace {
 		return value;
 	}
 	
-	public String getSeqnum() {
+	public ArrayList<Integer> getSeqnum() {
 		return seqnum;
 	}
 	
