@@ -19,6 +19,7 @@ public class Executer {
 	private ArrayList<Trace> traceLists;
 	private static String inputFileName = "src/main/resources/trace.json";
 	private static String packageName = "breakDownTest";
+	private String path = "src/main/resources";
 	
 	private ArrayList<String> excludeOwner = this.getExcludeOwner();
 
@@ -44,16 +45,38 @@ public class Executer {
 	
 	public ArrayList<String> getAnalyzeFile(){
 		ArrayList<String> result = new ArrayList<String>();
-//		result.add("src/main/resources/forExample/Calculator.java");
-//		result.add("src/main/resources/forExample/Executer.java");
 		
-//		result.add("src/main/resources/fuga/Executer.java");
-//		result.add("src/main/resources/fuga/Formula.java");
-//		result.add("src/main/resources/fuga/Lexer.java");
-//		result.add("src/main/resources/fuga/Main.java");
-//		result.add("src/main/resources/fuga/Parser.java");
+		File dir = new File(path);
+		File[] files = dir.listFiles();
 		
-		result.add("src/main/resources/forArray/Main.java");
+		ArrayList<String> filePathLists = new ArrayList<String>();
+		
+		for(int i = 0; i < files.length; i++) {
+			String filePath = files[i].getPath();
+			
+			if(!filePath.contains("trace.json")) {
+				if(!filePath.contains(".java")) {
+					filePathLists.add(filePath);
+				}
+			}
+		}
+		
+		while(filePathLists.size() > 0) {
+			File pathDir = new File(filePathLists.get(0));
+			filePathLists.remove(0);
+			File[] pathDirFiles = pathDir.listFiles();
+			
+			for(int i = 0; i < pathDirFiles.length; i++) {
+				String pathFilePath = pathDirFiles[i].getPath();
+				
+				if(pathFilePath.contains(".java")) {
+					result.add(pathFilePath);
+				}else {
+					filePathLists.add(pathFilePath);
+				}
+			}
+			
+		}
 
 		return result;
 	}
