@@ -1,6 +1,7 @@
 package dataSet;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 public class Array {
 
@@ -15,7 +16,7 @@ public class Array {
 	
 	public void createConstructor(int seqnum) {
 		Method method = new Method();
-		String executeStatement = type + " " + name + "[] = new " + owner + "[" + index + "];";
+		String executeStatement = type + " " + name + "[] = new " + type + "[" + index + "];";
 		method.setOwner(owner);
 		method.setExecuteStatement(executeStatement);
 		method.setReturnValueType(owner);
@@ -69,8 +70,9 @@ public class Array {
 	}
 	
 	public void setType(String input) {
-		type = input;
-		owner = type.replace("[]", "");
+		String[] split = input.split(Pattern.quote("."));
+		type = split[split.length-1];
+		owner = input.replace("[]", "");
 	}
 	
 	private void setOwner(String input) {

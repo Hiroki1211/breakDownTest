@@ -30,17 +30,26 @@ public class Executer {
 	public static void main(String[] argv) {
 		long startTime = System.currentTimeMillis();
 		File inputFile = new File(inputFileName);
-		Lexer lexer = new Lexer(inputFile);
-		ArrayList<Trace> traceLists = lexer.getTraceLists();
-		Analyzer analyzer = new Analyzer();
-		Executer executer = new Executer(traceLists);
-		ArrayList<String> analyzeTargetLists = executer.getAnalyzeFile();
-		analyzer.run(analyzeTargetLists);
-		ArrayList<AnalyzerMethod> analyzerMethodLists = analyzer.getMethodLists();
-		ArrayList<AnalyzerVariable> analyzerVariableLists = analyzer.getVariableLists();
-		executer.run(analyzerMethodLists, analyzerVariableLists);
-		long endTime = System.currentTimeMillis();
-		System.out.println("処理時間：" + (endTime - startTime) + " ms");
+		
+		if(inputFile.exists()) {
+			Lexer lexer = new Lexer(inputFile);
+			ArrayList<Trace> traceLists = lexer.getTraceLists();
+			Analyzer analyzer = new Analyzer();
+			Executer executer = new Executer(traceLists);
+			ArrayList<String> analyzeTargetLists = executer.getAnalyzeFile();
+			if(analyzeTargetLists.size() != 0) {
+				analyzer.run(analyzeTargetLists);
+				ArrayList<AnalyzerMethod> analyzerMethodLists = analyzer.getMethodLists();
+				ArrayList<AnalyzerVariable> analyzerVariableLists = analyzer.getVariableLists();
+				executer.run(analyzerMethodLists, analyzerVariableLists);
+				long endTime = System.currentTimeMillis();
+				System.out.println("処理時間：" + (endTime - startTime) + " ms");
+			}else {
+				System.out.println("code does not exist");
+			}
+		}else {
+			System.out.println("trace.json does not exist");
+		}
 	}
 	
 	public ArrayList<String> getAnalyzeFile(){
