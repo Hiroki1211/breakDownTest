@@ -307,6 +307,7 @@ public class Executer {
 		ArrayList<Method> methodLists = new ArrayList<Method>();
 		
 		int record = 1;
+		boolean belongSameClassFlag = false;
 		
 		for(int i = 0; i < traceLists.size(); i++) {
 			Trace trace = traceLists.get(i);
@@ -319,6 +320,9 @@ public class Executer {
 					methodType = trace.getAttr().getMethodtype();
 					methodValueOptionForId = trace.getValue().getValueOptionLists();
 					seqNumLists = trace.getSeqnum();
+					if(trace.getAttr().getOwner().equals(trace.getCname())) {
+						belongSameClassFlag = true;
+					}
 					
 					break;
 					
@@ -328,7 +332,7 @@ public class Executer {
 					
 				case "CALL_RETURN":
 					// コンストラクタ以外
-					if(!createInstanceFlag) {
+					if(!createInstanceFlag && !belongSameClassFlag) {
 						
 						AnalyzerMethod AnalyzerMethod = null;
 						for(int analyzeNum = 0; analyzeNum < analyzerMethodLists.size(); analyzeNum++) {
@@ -372,6 +376,8 @@ public class Executer {
 						params = new ArrayList<ArrayList<ValueOption>>();
 					}
 					
+					belongSameClassFlag = false;
+					
 					break;
 					
 				case "NEW_OBJECT":
@@ -384,21 +390,29 @@ public class Executer {
 					record = trace.getRecord();
 					
 					// create Instance
-					this.createObjectInstance(record, trace, instanceLists, params, arrayLists);
+					ArrayList<Method> constructorMethodLists = this.createObjectInstance(record, trace, instanceLists, params, arrayLists, methodLists);
 					
-					// create UnitTest
 					for(int recordNum = 0; recordNum < record; recordNum++) {
-						// 1. create Method
-						Method instanceMethod = this.createObjectInstanceMethod(params, recordNum, trace, methodOwner, methodCalledFrom);
-						methodLists.add(instanceMethod);
-						
+						Method instanceMethod = constructorMethodLists.get(recordNum);
+						instanceMethod.setId(trace.getValue().getValueOptionLists().get(recordNum).getId());
+						instanceMethod.setOwnerValueOption(trace.getValue().getValueOptionLists().get(recordNum));
 						ArrayList<ValueOption> executeConstructorParams = instanceMethod.getParams();
-						String executeStatement = this.createObjectInstanceMethodExecuteStatement(instanceMethod, executeConstructorParams, instanceLists);
-						instanceMethod.setExecuteStatement(executeStatement);
-						
-						// 2. create UnitTest
 						this.createObjectUnitTest(methodOwner, executeConstructorParams, instanceLists, instanceMethod, unitTestLists);
 					}
+					
+//					// create UnitTest
+//					for(int recordNum = 0; recordNum < record; recordNum++) {
+//						// 1. create Method
+//						Method instanceMethod = this.createObjectInstanceMethod(params, recordNum, trace, methodOwner, methodCalledFrom);
+//						methodLists.add(instanceMethod);
+//						
+//						ArrayList<ValueOption> executeConstructorParams = instanceMethod.getParams();
+//						String executeStatement = this.createObjectInstanceMethodExecuteStatement(instanceMethod, executeConstructorParams, instanceLists);
+//						instanceMethod.setExecuteStatement(executeStatement);
+//						
+//						// 2. create UnitTest
+//						this.createObjectUnitTest(methodOwner, executeConstructorParams, instanceLists, instanceMethod, unitTestLists);
+//					}
 					
 					// 初期化
 					params = new ArrayList<ArrayList<ValueOption>>();
@@ -500,7 +514,7 @@ public class Executer {
 									UnitTest targetUnitTest = unitTestLists.get(targetUnitTestNum);
 									Method targetUnitTestMethod = targetUnitTest.getMethod();
 	
-									if(targetUnitTestMethod.getId().equals(targetInstance.getId()) && targetUnitTestMethod.getName().equals(targetMethodName) && analyzerVariable.getGetterMethod() != null) {
+									if(targetUnitTestMethod.getId().equals(targetInstance.getId()) && targetUnitTestMethod.getName().equals(targetMethodName) && (analyzerVariable.getGetterMethod() != null || analyzerVariable.getAccessModifier().equals("public"))) {
 										// assertion文の作成
 										String targetInstanceName = this.getInstanceFromId(targetUnitTest.getMethod().getId(), instanceLists, targetUnitTest.getOwner()).getName();
 										String assertionStatement = "";
@@ -713,8 +727,10 @@ public class Executer {
 		instance.createConstructorStatement(instanceLists, arrayLists, instanceMethod);
 	}
 	
-	private void createObjectInstance(int record, Trace trace, ArrayList<Instance> instanceLists, ArrayList<ArrayList<ValueOption>> params, ArrayList<Array> arrayLists) {
+	private ArrayList<Method> createObjectInstance(int record, Trace trace, ArrayList<Instance> instanceLists, ArrayList<ArrayList<ValueOption>> params, ArrayList<Array> arrayLists, ArrayList<Method> methodLists) {
 		Instance instance = new Instance();
+		ArrayList<Method> constructorMethodLists = new ArrayList<Method>();
+				
 		for(int recordNum = 0; recordNum < record; recordNum++) {
 			instance = new Instance();
 			ValueOption instanceValueOption = trace.getValue().getValueOptionLists().get(recordNum);
@@ -724,56 +740,58 @@ public class Executer {
 				instance.addConstructorParams(params.get(constructorParamNum).get(recordNum));
 			}
 			
-			instance.createConstructorStatement(instanceLists, arrayLists, trace.getSeqnum().get(recordNum));
+			Method method = instance.createConstructorStatement(instanceLists, arrayLists, trace.getSeqnum().get(recordNum));
+			methodLists.add(method);
 			instanceLists.add(instance);
+			constructorMethodLists.add(method);
 		}
 		
+		return constructorMethodLists;
 	}
 	
-	private Method createObjectInstanceMethod(ArrayList<ArrayList<ValueOption>> params, int recordNum, Trace trace, String methodOwner, String methodCalledFrom) {
-		Method instanceMethod = new Method();
-		instanceMethod.setName("<init>");
-		for(int j = 0; j < params.size(); j++) {
-			instanceMethod.addParams(params.get(j).get(recordNum));
-		}
-		instanceMethod.setOwner(trace.getValue().getValueOptionLists().get(recordNum).getType());
-		instanceMethod.setReturnValueType(methodOwner);
-		instanceMethod.setReturnValue(trace.getValue().getValueOptionLists().get(recordNum));
-		instanceMethod.setId(trace.getValue().getValueOptionLists().get(recordNum).getId());
-		instanceMethod.setCalledFrom(methodCalledFrom);
-		instanceMethod.setOwnerValueOption(trace.getValue().getValueOptionLists().get(recordNum));
-		instanceMethod.setSeqnum(trace.getSeqnum().get(recordNum));
-		
-		return instanceMethod;
-	}
-	
-	private String createObjectInstanceMethodExecuteStatement(Method instanceMethod, ArrayList<ValueOption> executeConstructorParams, ArrayList<Instance> instanceLists) {
-		Instance tmpInstance = this.getInstanceFromId(instanceMethod.getId(), instanceLists, instanceMethod.getOwner());
-		String executeStatement = instanceMethod.getReturnValueType() + " " + tmpInstance.getName() +" = new " + instanceMethod.getReturnValueType() + "(";
-		for(int exConParamNum = 0; exConParamNum < executeConstructorParams.size(); exConParamNum++) {
-			String addParam = "";
-			if(executeConstructorParams.get(exConParamNum).getValue().equals("")) {
-				String paramInstanceId = executeConstructorParams.get(exConParamNum).getId();
-				Instance paramInstance = this.getInstanceFromId(paramInstanceId, instanceLists);
-				addParam = paramInstance.getName();
-			}else {
-				addParam = executeConstructorParams.get(exConParamNum).getValue();
-			}
-			
-			if(exConParamNum == executeConstructorParams.size() - 1) {
-				executeStatement += addParam;
-			}else {
-				executeStatement += addParam + ", ";
-			}
-		}
-		executeStatement += ");";
-		
-		ArrayList<Method> constructorLists = new ArrayList<Method>();
-		constructorLists.add(instanceMethod);
-		tmpInstance.setConstructorLists(constructorLists);
-		
-		return executeStatement;
-	}
+//	private Method createObjectInstanceMethod(ArrayList<ArrayList<ValueOption>> params, int recordNum, Trace trace, String methodOwner, String methodCalledFrom) {
+//		Method instanceMethod = new Method();
+//		instanceMethod.setName("<init>");
+//		for(int j = 0; j < params.size(); j++) {
+//			instanceMethod.addParams(params.get(j).get(recordNum));
+//		}
+//		instanceMethod.setOwner(trace.getValue().getValueOptionLists().get(recordNum).getType());
+//		instanceMethod.setReturnValueType(methodOwner);
+//		instanceMethod.setReturnValue(trace.getValue().getValueOptionLists().get(recordNum));
+//		instanceMethod.setId(trace.getValue().getValueOptionLists().get(recordNum).getId());
+//		instanceMethod.setCalledFrom(methodCalledFrom);
+//		instanceMethod.setOwnerValueOption(trace.getValue().getValueOptionLists().get(recordNum));
+//		instanceMethod.setSeqnum(trace.getSeqnum().get(recordNum));
+//		
+//		return instanceMethod;
+//	}
+//	
+//	private String createObjectInstanceMethodExecuteStatement(Method instanceMethod, ArrayList<ValueOption> executeConstructorParams, ArrayList<Instance> instanceLists) {
+//		Instance tmpInstance = this.getInstanceFromId(instanceMethod.getId(), instanceLists, instanceMethod.getOwner());
+//		String executeStatement = instanceMethod.getReturnValueType() + " " + tmpInstance.getName() +" = new " + instanceMethod.getReturnValueType() + "(";
+//		for(int exConParamNum = 0; exConParamNum < executeConstructorParams.size(); exConParamNum++) {
+//			String addParam = "";
+//			if(executeConstructorParams.get(exConParamNum).getValue().equals("")) {
+//				String paramInstanceId = executeConstructorParams.get(exConParamNum).getId();
+//				Instance paramInstance = this.getInstanceFromId(paramInstanceId, instanceLists);
+//				addParam = paramInstance.getName();
+//			}else {
+//				addParam = executeConstructorParams.get(exConParamNum).getValue();
+//			}
+//			
+//			if(exConParamNum == executeConstructorParams.size() - 1) {
+//				executeStatement += addParam;
+//			}else {
+//				executeStatement += addParam + ", ";
+//			}
+//		}
+//		executeStatement += ");";
+//		
+//		
+//		tmpInstance.addConstructorLists(instanceMethod);
+//		
+//		return executeStatement;
+//	}
 	
 	private void createObjectUnitTest(String methodOwner, ArrayList<ValueOption> executeConstructorParams, ArrayList<Instance> instanceLists, Method instanceMethod, ArrayList<UnitTest> unitTestLists) {
 		UnitTest instanceUnitTest = new UnitTest();

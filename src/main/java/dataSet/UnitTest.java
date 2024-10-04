@@ -45,23 +45,19 @@ public class UnitTest {
 		}
 		
 		for(int i = 0; i < methodLists.size(); i++) {
-			if(methodLists.get(i).getHasAssignment()) {
+			// if(methodLists.get(i).getHasAssignment()) {
 				if(methodSeqNum > methodLists.get(i).getSeqNum()) {
-					System.out.println(method.getName());
-					System.out.println(methodSeqNum);
-					System.out.println(methodLists.get(i).getName());
-					System.out.println(methodLists.get(i).getSeqNum());
 					forCreateMethodLists.add(methodLists.get(i));
 				}
-			}
+			//}
 		}
 		
 		for(int i = 0; i < argumentMethodLists.size(); i++) {
-			if(argumentMethodLists.get(i).getHasAssignment()) {
+			// if(argumentMethodLists.get(i).getHasAssignment()) {
 				if(methodSeqNum > argumentMethodLists.get(i).getSeqNum()) {
 					forCreateMethodLists.add(argumentMethodLists.get(i));
 				}
-			}
+			// }
 		}
 		
 		for(int i = 0; i < constructorArrayLists.size(); i++) {

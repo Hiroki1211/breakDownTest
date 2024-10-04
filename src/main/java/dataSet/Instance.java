@@ -136,6 +136,9 @@ public class Instance implements Cloneable{
 		method.setExecuteStatement(constructor);
 		method.setOwner(owner);
 		method.setSeqnum(seqnum);
+		method.setName("<init>");
+		method.setReturnValueType(owner);
+		constructorLists.add(method);
 		
 		return method;
 	}
@@ -157,6 +160,10 @@ public class Instance implements Cloneable{
 	
 	public void setConstructorLists(ArrayList<Method> input) {
 		constructorLists = input;
+	}
+	
+	public void addConstructorLists(Method input) {
+		constructorLists.add(input);
 	}
 	
 	public void addConstructorParams(ValueOption input) {
