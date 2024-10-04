@@ -3,19 +3,27 @@ package dataSet;
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class UnitTest {
+import analyzer.AnalyzerVariable;
 
+public class UnitTest {
+	
+	private String owner;
+	
+	// for create unitTest
 	private ArrayList<Method> constructorLists = new ArrayList<Method>();
 	private ArrayList<Method> constructorArgumentLists = new ArrayList<Method>();
 	private ArrayList<Method> methodLists = new ArrayList<Method>();
 	private ArrayList<Method> argumentMethodLists = new ArrayList<Method>();
 	private Method method = null;
-	private ArrayList<String> assertionLists = new ArrayList<String>();
-	
+	private String assertion;
+	private ArrayList<Assignment> assignmentLists = new ArrayList<Assignment>();
 	private ArrayList<Method> constructorArrayLists = new ArrayList<Method>();
-	private String owner;
 	
+	// for export unitTest
 	private ArrayList<String> unitTestStatement = new ArrayList<String>();
+	
+	// for assignment
+	private ArrayList<AnalyzerVariable> analyzerVariableLists = new ArrayList<AnalyzerVariable>();
 	
 	public void addTestDeclarationUnitTestStatement(String input) {
 		unitTestStatement.add(1, input);
@@ -26,6 +34,7 @@ public class UnitTest {
 		unitTestStatement.add("@Test");
 		
 		ArrayList<Method> forCreateMethodLists = new ArrayList<Method>();
+		int methodSeqNum = method.getSeqNum();
 		
 		for(int i = 0; i < constructorLists.size(); i++) {
 			forCreateMethodLists.add(constructorLists.get(i));
@@ -37,13 +46,21 @@ public class UnitTest {
 		
 		for(int i = 0; i < methodLists.size(); i++) {
 			if(methodLists.get(i).getHasAssignment()) {
-				forCreateMethodLists.add(methodLists.get(i));
+				if(methodSeqNum > methodLists.get(i).getSeqNum()) {
+					System.out.println(method.getName());
+					System.out.println(methodSeqNum);
+					System.out.println(methodLists.get(i).getName());
+					System.out.println(methodLists.get(i).getSeqNum());
+					forCreateMethodLists.add(methodLists.get(i));
+				}
 			}
 		}
 		
 		for(int i = 0; i < argumentMethodLists.size(); i++) {
 			if(argumentMethodLists.get(i).getHasAssignment()) {
-				forCreateMethodLists.add(argumentMethodLists.get(i));
+				if(methodSeqNum > argumentMethodLists.get(i).getSeqNum()) {
+					forCreateMethodLists.add(argumentMethodLists.get(i));
+				}
 			}
 		}
 		
@@ -75,8 +92,13 @@ public class UnitTest {
 		unitTestStatement.add("\t" + method.getExecuteStatement());
 		
 		unitTestStatement.add("\t" + "// assertion");
-		for(int i = 0; i < assertionLists.size(); i++) {
-			unitTestStatement.add("\t" + assertionLists.get(i));
+		if(assertion != null) {
+			unitTestStatement.add("\t" + assertion);
+		}
+		
+		unitTestStatement.add("\t" + "// assignment assertion");
+		for(int i = 0; i < assignmentLists.size(); i++){
+			unitTestStatement.add("\t" + assignmentLists.get(i).getExecuteStatement());
 		}
 		
 		unitTestStatement.add("}");
@@ -102,8 +124,26 @@ public class UnitTest {
 		method = input;
 	}
 	
-	public void addAssertionLists(String input) {
-		assertionLists.add(input);
+	public void setAssertion(String input) {
+		assertion = input;
+	}
+	
+	public void addAssignmentLists(Assignment input) {
+		if(!analyzerVariableLists.contains(input.getAnalyzerVariable())) {
+			addAnalyzerVariableLists(input.getAnalyzerVariable());
+			assignmentLists.add(input);
+		}else {
+			for(int i = 0; i < analyzerVariableLists.size(); i++) {
+				if(input.getAnalyzerVariable() == analyzerVariableLists.get(i)) {
+					analyzerVariableLists.remove(i);
+					assignmentLists.add(input);
+				}
+			}
+		}
+	}
+	
+	private void addAnalyzerVariableLists(AnalyzerVariable input) {
+		analyzerVariableLists.add(input);
 	}
 	
 	public void addConstructorArrayLists(Method input) {
@@ -134,8 +174,12 @@ public class UnitTest {
 		return method;
 	}
 	
-	public ArrayList<String> getAssertionLists(){
-		return assertionLists;
+	public String getAssertion(){
+		return assertion;
+	}
+	
+	public ArrayList<Assignment> getAssinmentLists(){
+		return assignmentLists;
 	}
 	
 	public ArrayList<Method> getConstructorArrayLists(){

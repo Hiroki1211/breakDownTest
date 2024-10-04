@@ -167,6 +167,7 @@ public class Analyzer {
 	
 	private ArrayList<String> splitContent(String input) {
 		ArrayList<String> result = new ArrayList<String>();
+		input = input.replace("{", "");
 		String[] split = input.split(" +");
 		
 		for(int i = 0; i < split.length; i++) {

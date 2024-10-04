@@ -6,8 +6,8 @@ public class AnalyzerVariable {
 	private String fieldModifier = "";
 	private String type = "";
 	private String name = "";
-	private AnalyzerMethod getterMethod = new AnalyzerMethod(null);
-	private AnalyzerMethod setterMethod = new AnalyzerMethod(null);
+	private AnalyzerMethod getterMethod = null;
+	private AnalyzerMethod setterMethod = null;
 	private Class ownerClass;
 	
 	public void display() {

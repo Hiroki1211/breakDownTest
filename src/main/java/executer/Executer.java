@@ -17,9 +17,9 @@ import tracer.ValueOption;
 public class Executer {
 	
 	private ArrayList<Trace> traceLists;
-	private static String inputFileName = "src/main/resources/trace.json";
+	private static String inputFileName = "trace.json";
 	private static String packageName = "breakDownTest";
-	private String path = "src/main/resources";
+	private String path = "src/main/java";
 	
 	private ArrayList<String> excludeOwner = this.getExcludeOwner();
 
@@ -64,7 +64,7 @@ public class Executer {
 			String filePath = files[i].getPath();
 			
 			if(!filePath.contains("trace.json")) {
-				if(!filePath.contains(".java")) {
+				if(!filePath.contains(".java") && !filePath.contains(".class")) {
 					filePathLists.add(filePath);
 				}
 			}
@@ -73,6 +73,7 @@ public class Executer {
 		while(filePathLists.size() > 0) {
 			File pathDir = new File(filePathLists.get(0));
 			filePathLists.remove(0);
+			
 			File[] pathDirFiles = pathDir.listFiles();
 			
 			for(int i = 0; i < pathDirFiles.length; i++) {
@@ -80,7 +81,7 @@ public class Executer {
 				
 				if(pathFilePath.contains(".java")) {
 					result.add(pathFilePath);
-				}else {
+				}else if(!pathFilePath.contains(".class")){
 					filePathLists.add(pathFilePath);
 				}
 			}
@@ -293,6 +294,7 @@ public class Executer {
 		String methodType = "";
 		ArrayList<ValueOption> methodValueOptionForId = new ArrayList<ValueOption>();
 		ArrayList<ArrayList<ValueOption>> params = new ArrayList<ArrayList<ValueOption>>();	
+		ArrayList<Integer> seqNumLists = new ArrayList<Integer>();
 		
 		// for array
 		ArrayList<String> arrayIdLists = new ArrayList<String>();
@@ -316,6 +318,7 @@ public class Executer {
 					methodCalledFrom = trace.getFilename();
 					methodType = trace.getAttr().getMethodtype();
 					methodValueOptionForId = trace.getValue().getValueOptionLists();
+					seqNumLists = trace.getSeqnum();
 					
 					break;
 					
@@ -344,7 +347,7 @@ public class Executer {
 							if(methodType.equals("instance")){
 								for(int recordNum = 0; recordNum < record; recordNum++) {
 									// createMethod
-								 	Method method = this.createMethod(methodValueOptionForId, recordNum, methodName, methodOwner, params, trace);
+								 	Method method = this.createMethod(methodValueOptionForId, recordNum, methodName, methodOwner, params, trace, seqNumLists);
 									methodLists.add(method);
 								 	
 									// create Method executeStatement
@@ -478,9 +481,9 @@ public class Executer {
 							String targetOwner = trace.getAttr().getOwner();
 							String[] targetTmpSplit = targetOwner.split(Pattern.quote("."));
 							targetOwner = targetTmpSplit[targetTmpSplit.length - 1];
-							AnalyzerVariable analyzerVariable = null;
 							
-							// 1. 変数の特定
+							// 変数の特定
+							AnalyzerVariable analyzerVariable = null;
 							for(int targetAnalyzerVarNum = 0; targetAnalyzerVarNum < analyzerVariableLists.size(); targetAnalyzerVarNum++) {
 								String targetAnalyzerVariable = analyzerVariableLists.get(targetAnalyzerVarNum).getName();
 								String targetAnalyzerVariableOwner = analyzerVariableLists.get(targetAnalyzerVarNum).getOwnerClass().getName();
@@ -490,25 +493,33 @@ public class Executer {
 								}
 							}
 							
-							// 3. UnitTestListsから対象のUnitTestを特定・assertion文の追加
-							ValueOption targetInstance = targetInstanceLists.get(targetNum);
-							for(int targetUnitTestNum = 0; targetUnitTestNum < unitTestLists.size(); targetUnitTestNum++) {
-								UnitTest targetUnitTest = unitTestLists.get(targetUnitTestNum);
-								Method targetUnitTestMethod = targetUnitTest.getMethod();
-
-								if(targetUnitTestMethod.getId().equals(targetInstance.getId()) && targetUnitTestMethod.getName().equals(targetMethodName)) {
-									// 2. assertion文の作成
-									String targetInstanceName = this.getInstanceFromId(targetUnitTest.getMethod().getId(), instanceLists, targetUnitTest.getOwner()).getName();
-									String assertionStatement = "assertEquals(" + targetVariableValue + ", " + targetInstanceName + "." + analyzerVariable.getGetterMethod().getName() + "());";
-									targetUnitTest.addAssertionLists(assertionStatement);
-									for(int methodNum = 0; methodNum < methodLists.size(); methodNum++) {
-										Method targetAssertionMethod = methodLists.get(methodNum);
-										if(targetAssertionMethod.getName().equals(targetUnitTestMethod.getName()) && targetAssertionMethod.getOwner().equals(targetUnitTestMethod.getOwner())) {
-											targetAssertionMethod.setHasAssignment(true);
+							// UnitTestListsから対象のUnitTestを特定・assertion文の追加
+							if(analyzerVariable != null) {
+								ValueOption targetInstance = targetInstanceLists.get(targetNum);
+								for(int targetUnitTestNum = 0; targetUnitTestNum < unitTestLists.size(); targetUnitTestNum++) {
+									UnitTest targetUnitTest = unitTestLists.get(targetUnitTestNum);
+									Method targetUnitTestMethod = targetUnitTest.getMethod();
+	
+									if(targetUnitTestMethod.getId().equals(targetInstance.getId()) && targetUnitTestMethod.getName().equals(targetMethodName) && analyzerVariable.getGetterMethod() != null) {
+										// assertion文の作成
+										String targetInstanceName = this.getInstanceFromId(targetUnitTest.getMethod().getId(), instanceLists, targetUnitTest.getOwner()).getName();
+										String assertionStatement = "";
+										if(analyzerVariable.getAccessModifier().equals("public")) {
+											assertionStatement = "assertEquals(" + targetVariableValue + ", " + targetInstanceName + "." + analyzerVariable.getName() + "());";
+										}else {
+											assertionStatement = "assertEquals(" + targetVariableValue + ", " + targetInstanceName + "." + analyzerVariable.getGetterMethod().getName() + "());";
 										}
+										Assignment assignment = new Assignment(analyzerVariable, assertionStatement);
+										targetUnitTest.addAssignmentLists(assignment);
+										for(int methodNum = 0; methodNum < methodLists.size(); methodNum++) {
+											Method targetAssertionMethod = methodLists.get(methodNum);
+											if(targetAssertionMethod.getName().equals(targetUnitTestMethod.getName()) && targetAssertionMethod.getOwner().equals(targetUnitTestMethod.getOwner())) {
+												targetAssertionMethod.setHasAssignment(true);
+											}
+										}
+										
+										break;
 									}
-									
-									break;
 								}
 							}
 						}
@@ -518,16 +529,41 @@ public class Executer {
 			}
 		}
 		
+		for(int unitTestNum = 0; unitTestNum < unitTestLists.size(); unitTestNum++) {
+			UnitTest unitTest = unitTestLists.get(unitTestNum);
+			Method method = unitTest.getMethod();
+			Instance methodInstance = this.getInstanceFromId(method.getId(), instanceLists);
+			// 4. メソッドで使用するインスタンスのメソッドを実行
+			if(methodInstance != null) {
+				ArrayList<Method> methodInstanceMethodLists = new ArrayList<Method>(methodInstance.getMethodLists());
+				unitTest.setMethodLists(methodInstanceMethodLists);
+			}
+			// 5. メソッドの引数で使用するインスタンスのメソッドを実行
+			for(int paramNum = 0; paramNum < method.getParams().size(); paramNum++) {
+				ValueOption valueOption = method.getParams().get(paramNum);
+				if(!valueOption.getId().equals("")) {
+					Instance argumentInstance = this.getInstanceFromId(valueOption.getId(), instanceLists);
+					if(argumentInstance != null) {
+						ArrayList<Method> argumentInstanceMethodLists = argumentInstance.getMethodLists();
+						for(int argumentInstanceMethodNum = 0; argumentInstanceMethodNum < argumentInstanceMethodLists.size(); argumentInstanceMethodNum++) {
+							Method argumentMethod = argumentInstanceMethodLists.get(argumentInstanceMethodNum);
+							unitTest.addArgumentMethodLists(argumentMethod);
+						}
+					}
+				}
+			}
+		}
+		
 		return unitTestLists;
 	}
 	
-	private Method createMethod(ArrayList<ValueOption> methodValueOptionForId, int recordNum, String methodName, String methodOwner, ArrayList<ArrayList<ValueOption>> params, Trace trace) {
+	private Method createMethod(ArrayList<ValueOption> methodValueOptionForId, int recordNum, String methodName, String methodOwner, ArrayList<ArrayList<ValueOption>> params, Trace trace, ArrayList<Integer> seqNumLists) {
 		Method method = new Method();
 		method.setId(methodValueOptionForId.get(recordNum).getId());
 		method.setName(methodName);
 		method.setOwner(methodOwner);
 		method.setOwnerValueOption(methodValueOptionForId.get(recordNum));
-		method.setSeqnum(trace.getSeqnum().get(recordNum));
+		method.setSeqnum(seqNumLists.get(recordNum));
 		for(int j = 0; j < params.size(); j++) {
 			method.addParams(params.get(j).get(recordNum));
 		}
@@ -613,25 +649,25 @@ public class Executer {
 				}
 			}
 		}
-		// 4. メソッドで使用するインスタンスのメソッドを実行
-		if(methodInstance != null) {
-			ArrayList<Method> methodInstanceMethodLists = new ArrayList<Method>(methodInstance.getMethodLists());
-			unitTest.setMethodLists(methodInstanceMethodLists);
-		}
-		// 5. メソッドの引数で使用するインスタンスのメソッドを実行
-		for(int paramNum = 0; paramNum < method.getParams().size(); paramNum++) {
-			ValueOption valueOption = method.getParams().get(paramNum);
-			if(!valueOption.getId().equals("")) {
-				Instance argumentInstance = this.getInstanceFromId(valueOption.getId(), instanceLists);
-				if(argumentInstance != null) {
-					ArrayList<Method> argumentInstanceMethodLists = argumentInstance.getMethodLists();
-					for(int argumentInstanceMethodNum = 0; argumentInstanceMethodNum < argumentInstanceMethodLists.size(); argumentInstanceMethodNum++) {
-						Method argumentMethod = argumentInstanceMethodLists.get(argumentInstanceMethodNum);
-						unitTest.addArgumentMethodLists(argumentMethod);
-					}
-				}
-			}
-		}
+//		// 4. メソッドで使用するインスタンスのメソッドを実行
+//		if(methodInstance != null) {
+//			ArrayList<Method> methodInstanceMethodLists = new ArrayList<Method>(methodInstance.getMethodLists());
+//			unitTest.setMethodLists(methodInstanceMethodLists);
+//		}
+//		// 5. メソッドの引数で使用するインスタンスのメソッドを実行
+//		for(int paramNum = 0; paramNum < method.getParams().size(); paramNum++) {
+//			ValueOption valueOption = method.getParams().get(paramNum);
+//			if(!valueOption.getId().equals("")) {
+//				Instance argumentInstance = this.getInstanceFromId(valueOption.getId(), instanceLists);
+//				if(argumentInstance != null) {
+//					ArrayList<Method> argumentInstanceMethodLists = argumentInstance.getMethodLists();
+//					for(int argumentInstanceMethodNum = 0; argumentInstanceMethodNum < argumentInstanceMethodLists.size(); argumentInstanceMethodNum++) {
+//						Method argumentMethod = argumentInstanceMethodLists.get(argumentInstanceMethodNum);
+//						unitTest.addArgumentMethodLists(argumentMethod);
+//					}
+//				}
+//			}
+//		}
 		// 6. メソッドを実行
 		unitTest.setMethod(method);
 		// 7. アサーションを追加
@@ -639,7 +675,7 @@ public class Executer {
 		if(method.getReturnValue() != null && method.getReturnValue().getValue() != null) {
 			if(!method.getReturnValue().getValue().equals("")) {
 				assertionStatement = this.createAssertion(method.getReturnValue().getValue());
-				unitTest.addAssertionLists(assertionStatement);
+				unitTest.setAssertion(assertionStatement);
 			}
 		}
 
